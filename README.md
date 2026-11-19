@@ -1,21 +1,22 @@
-# Wine Quality MLOps Pipeline (XGBoost + FastAPI + Docker + AWS ECS Fargate)
+﻿# Wine Quality MLOps Pipeline (`eu-north-1`)
 
-Pipeline MLOps de bout en bout pour prédire la qualité du vin (11 variables physico-chimiques) :
-- **Modèle & suivi** : XGBoost + MLflow
-- **API d'inférence** : FastAPI + Uvicorn (`POST /predict`)
-- **Conteneurisation** : Docker (`python:3.10-slim`)
-- **Cloud AWS** : Amazon ECR et Amazon ECS Fargate dans la région `eu-north-1` (selon la gouvernance du compte / SCP)
+Production-minded MLOps pipeline for red wine quality prediction using **XGBoost**, **MLflow**, **FastAPI**, **Docker**, **Amazon ECR**, and **Amazon ECS Fargate**, built under a strict **5 $/month** cost guardrail in `eu-north-1`.
 
-## Lancer en local avec Docker
+## Architecture & Stack
+- **Model & Tracking**: `XGBoost` trained on the 11 wine features (`WineFeatures` schema validated with Pydantic in `src/schema.py`) and tracked with `MLflow` (`model/model.joblib`).
+- **Serving API**: `FastAPI` exposed via `Uvicorn` on port `8000` (`POST /predict`) and packaged in a `Docker` image.
+- **AWS Cloud (`eu-north-1`)**: Image stored in **Amazon ECR** and deployed on **Amazon ECS Fargate** for validation runs, while keeping active Fargate tasks scaled to `0` outside test windows.
 
-```bash
-docker build -t wine-mlops-api .
-docker run -p 8000:8000 wine-mlops-api
-## Architecture, Costs & MLOps Gaps
+## CI & Quality Gates
+GitHub Actions (`.github/workflows/ci.yml`) runs automatically on `push` and `pull_request` to `main`:
+- Python bytecode compilation (`python -m compileall .`)
+- Automated unit & schema/model gate tests (`pytest -v` covering `src/schema.py` and `model/model.joblib`)
+- Container build verification (`docker build`)
 
-- **Stack & Region**: XGBoost, MLflow, FastAPI (`POST /predict`), Docker, ECR, and ECS Fargate in `eu-north-1`.
-- **Cost Governance**: Monthly budget cap set to $5/month; ECS tasks are stopped when not actively testing to preserve credits.
-- **Current MLOps Gaps**:
-  - **CI/CD**: Basic syntax check in GitHub Actions; automated Docker build/push to ECR and deployment are not yet wired.
-  - **Monitoring**: No continuous production telemetry, latency/error alerting, or drift tracking on the 11 input features.
-  - **Retraining**: No automated data drift trigger or scheduled retraining pipeline yet.
+## Cost Governance ($5/Month Cap)
+- **Zero idle compute**: ECS Fargate desired count is kept at `0` tasks when no test is running.
+- **Budget discipline**: All cloud checks stay targeted in `eu-north-1` without continuous high-cost managed endpoints or always-on workers.
+
+## Known MLOps Gaps & Next Steps
+- **Continuous Drift & Observability**: No continuous production data-drift detector or centralized telemetry pipeline is active yet.
+- **Automated Retraining & CD**: Model retraining and automated ECR/ECS rollout on model promotion are intentionally decoupled until data/model gates are expanded further.

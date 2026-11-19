@@ -25,4 +25,4 @@ GitHub Actions (`.github/workflows/ci.yml`) runs automatically on `push` and `pu
 
 1. **Check automated CI runs**: Open the **Actions** tab on `TechBsf/wine-quality-mlops-aw` (`main`) to inspect `pytest` results (`src/schema.py` and `model/model.joblib`) and the `docker build` check.
 2. **Run tests locally**: `pytest -v`
-3. **Start the FastAPI service and test `POST /predict` (11 features)**: `uvicorn scripts.app:app --host 0.0.0.0 --port 8000` with sample payload `7.4, 0.7, 0.0, 1.9, 0.076, 11.0, 34.0, 0.9978, 3.51, 0.56, 9.4` (HTTP `200` expected), while keeping ECS Fargate at `0` tasks in `eu-north-1` to stay within the /month budget.
+3. **Start the FastAPI service and test `POST /predict` (11 features)**: `uvicorn scripts.app:app --host 0.0.0.0 --port 8000` with sample payload `7.4, 0.7, 0.0, 1.9, 0.076, 11.0, 34.0, 0.9978, 3.51, 0.56, 9.4` (HTTP `200` expected), while keeping ECS Fargate at `0` tasks in `eu-north-1` to stay within the $5/month budget.

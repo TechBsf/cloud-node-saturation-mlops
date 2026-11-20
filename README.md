@@ -1,28 +1,37 @@
-﻿# Wine Quality MLOps Pipeline (`eu-north-1`)
+# Wine Quality MLOps Pipeline
 
-Production-minded MLOps pipeline for red wine quality prediction using **XGBoost**, **MLflow**, **FastAPI**, **Docker**, **Amazon ECR**, and **Amazon ECS Fargate**, built under a strict **5 $/month** cost guardrail in `eu-north-1`.
+Production-minded MLOps pipeline for red wine quality prediction using **XGBoost**, **MLflow**, **FastAPI**, **Docker**, **Amazon ECR**, and **Amazon ECS Fargate**, designed with automated quality gates and on-demand serverless execution.
 
 ## Architecture & Stack
-- **Model & Tracking**: `XGBoost` trained on the 11 wine features (`WineFeatures` schema validated with Pydantic in `src/schema.py`) and tracked with `MLflow` (`model/model.joblib`).
-- **Serving API**: `FastAPI` exposed via `Uvicorn` on port `8000` (`POST /predict`) and packaged in a `Docker` image.
-- **AWS Cloud (`eu-north-1`)**: Image stored in **Amazon ECR** and deployed on **Amazon ECS Fargate** for validation runs, while keeping active Fargate tasks scaled to `0` outside test windows.
+
+* **Model & Tracking**: `XGBoost` trained on 11 physicochemical wine features (`WineFeatures` Pydantic schema validated in `src/schema.py`) and tracked with `MLflow` (`model/model.joblib`).
+* **Serving API**: `FastAPI` served via `Uvicorn` on port `8000` (`POST /predict`) and packaged as a `Docker` image.
+* **AWS Cloud (`eu-north-1`)**: Container image stored in **Amazon ECR** and deployed on **Amazon ECS Fargate** for validation runs, using a scale-to-zero configuration (`desiredCount = 0` in test windows) to eliminate idle compute costs.
 
 ## CI & Quality Gates
-GitHub Actions (`.github/workflows/ci.yml`) runs automatically on `push` and `pull_request` to `main`:
-- Python bytecode compilation (`python -m compileall .`)
-- Automated unit & schema/model gate tests (`pytest -v` covering `src/schema.py` and `model/model.joblib`)
-- Container build verification (`docker build`)
 
-## Cost Governance ($5/Month Cap)
-- **Zero idle compute**: ECS Fargate desired count is kept at `0` tasks when no test is running.
-- **Budget discipline**: All cloud checks stay targeted in `eu-north-1` without continuous high-cost managed endpoints or always-on workers.
+GitHub Actions (`.github/workflows/ci.yml`) runs automatically on every `push` and `pull_request` to `main`:
 
-## Known MLOps Gaps & Next Steps
-- **Continuous Drift & Observability**: No continuous production data-drift detector or centralized telemetry pipeline is active yet.
-- **Automated Retraining & CD**: Model retraining and automated ECR/ECS rollout on model promotion are intentionally decoupled until data/model gates are expanded further.
+* Bytecode syntax verification (`python -m compileall .`)
+* Automated unit, schema, and model artifact gate tests (`pytest -v` covering `src/schema.py` and `model/model.joblib`)
+* Container image build verification (`docker build`)
 
-## How a Reviewer Can Verify It Works
+## Quickstart & Verification
 
-1. **Check automated CI runs**: Open the **Actions** tab on `TechBsf/wine-quality-mlops-aw` (`main`) to inspect `pytest` results (`src/schema.py` and `model/model.joblib`) and the `docker build` check.
-2. **Run tests locally**: `pytest -v`
-3. **Start the FastAPI service and test `POST /predict` (11 features)**: `uvicorn scripts.app:app --host 0.0.0.0 --port 8000` with sample payload `7.4, 0.7, 0.0, 1.9, 0.076, 11.0, 34.0, 0.9978, 3.51, 0.56, 9.4` (HTTP `200` expected), while keeping ECS Fargate at `0` tasks in `eu-north-1` to stay within the $5/month budget.
+### 1. Inspect Automated CI
+Open the **Actions** tab on `TechBsf/wine-quality-mlops-aw` (`main`) to review `pytest` checks (`src/schema.py` and `model/model.joblib`) and the `docker build` step.
+
+### 2. Run Locally
+```bash
+pip install -r requirements.txt
+pytest -v
+uvicorn scripts.app:app --host 0.0.0.0 --port 8000
+```
+
+### 3. Test the Prediction Endpoint (`POST /predict`)
+Send a JSON payload matching `WineFeatures` in `src/schema.py` to `http://localhost:8000/predict`.
+
+## Roadmap & Future Improvements
+
+* **Observability & Drift Detection**: Add structured JSON inference logging and automated data-drift checks on incoming payloads.
+* **Automated CD & Retraining**: Trigger automated `ECR` push and `ECS Fargate` task definition updates on tagged releases (`v*`) via GitHub OIDC.

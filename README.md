@@ -1,6 +1,6 @@
 # Cloud Compute Node Saturation Risk MLOps Pipeline
 
-[![CI](https://github.com/TON_USER/TON_REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/TON_USER/TON_REPO/actions/workflows/ci.yml)
+[![CI](https://github.com/TechBsf/wine-quality-mlops-aw/actions/workflows/ci.yml/badge.svg)](https://github.com/TechBsf/wine-quality-mlops-aw/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11-blue)
 ![XGBoost](https://img.shields.io/badge/model-XGBoost-orange)
 ![FastAPI](https://img.shields.io/badge/API-FastAPI-009688)
@@ -24,11 +24,11 @@ Evaluated on a held-out test set (20 % of the data, `random_state=42`).
 
 Both models are far better than the mean baseline (R² ≈ 0.87-0.88). Linear regression and XGBoost are within ~4 % RMSE of each other on this dataset, which suggests the target is close to linear in the features here. XGBoost is kept as the production model for its ability to capture non-linear interactions on real telemetry (see Roadmap: cross-validation and tuning). All runs, parameters and metrics are tracked in MLflow.
 
-> Data: `data/compute_capacity.csv` is **synthetic / public (choisis)**, generated to mimic node telemetry.
+> Data: `data/compute_capacity.csv` is **synthetic**, generated to mimic node telemetry.
 
 ## Quick Start
 
-```powershell
+```bash
 # 1. Build the image
 docker build -t saturation-risk-api .
 
@@ -36,16 +36,12 @@ docker build -t saturation-risk-api .
 docker run -p 8000:8000 saturation-risk-api
 
 # 3. Call the endpoint
-curl -X POST http://localhost:8000/predict `
-  -H "Content-Type: application/json" `
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
   -d '{"cpu_utilization_pct": 85, "memory_utilization_pct": 78, "request_rate_rps": 1200, "p99_latency_ms": 450, "queue_depth": 40, "uptime_hours": 320}'
 ```
 
-Example response:
-
-```json
-{ "saturation_risk_score": 0.87 }
-```
+The response is a JSON object with a `saturation_risk_score` between 0.0 and 1.0.
 
 Interactive API docs (Swagger): `http://localhost:8000/docs`
 
@@ -53,11 +49,6 @@ Interactive API docs (Swagger): `http://localhost:8000/docs`
 
 The container image is pushed to **Amazon ECR** and served on **Amazon ECS Fargate** (serverless containers, no instance management).
 
-<!-- Ajoute tes captures dans docs/ puis décommente :
-![ECS service running](docs/ecs-service.png)
-![MLflow runs](docs/mlflow-runs.png)
-![Swagger UI](docs/swagger.png)
--->
 
 ## ML & MLOps Principles
 

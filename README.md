@@ -16,15 +16,15 @@ End-to-end MLOps pipeline predicting cloud compute node saturation risk (`satura
 
 ## Results
 
-Evaluated on a held-out test set (`XX`% of the data, fixed random seed).
+Evaluated on a held-out test set (20 % of the data, `random_state=42`).
 
 | Model | RMSE | MAE | R² |
 |---|---|---|---|
-| Baseline (mean predictor) | XX | XX | XX |
-| Linear Regression | XX | XX | XX |
-| **XGBRegressor (final)** | **XX** | **XX** | **XX** |
+| Baseline (mean predictor) | 0.0864 | 0.0700 | -0.0005 |
+| Linear Regression | 0.0302 | 0.0237 | 0.8778 |
+| XGBRegressor (final) | 0.0314 | 0.0245 | 0.8678 |
 
-XGBoost reduces RMSE by **XX %** versus the linear baseline. All runs, parameters and metrics are tracked in MLflow.
+Both models are far better than the mean baseline (R² ≈ 0.87-0.88). Linear regression and XGBoost are within ~4 % RMSE of each other on this dataset, which suggests the target is close to linear in the features here. XGBoost is kept as the production model for its ability to capture non-linear interactions on real telemetry (see Roadmap: cross-validation and tuning). All runs, parameters and metrics are tracked in MLflow.
 
 > Data: `data/compute_capacity.csv` is **synthetic / public (choisis)**, generated to mimic node telemetry.
 
@@ -70,12 +70,13 @@ The container image is pushed to **Amazon ECR** and served on **Amazon ECS Farga
 
 ## Design Decisions & Limitations
 
-- **Why XGBoost**: captures non-linear interactions between load signals on tabular data, fast to train and serve.
+- **Why XGBoost**: handles non-linear interactions between load signals and scales to richer telemetry. On the current dataset a linear model performs equally well, so the gain is not demonstrated yet; this is tracked in the Roadmap.
 - **Why ECS Fargate over EKS**: a single inference service does not justify Kubernetes operational overhead.
 - **Limitations**: synthetic data, no live traffic, no drift monitoring yet.
 
 ## Roadmap
 
+- [ ] 5-fold cross-validation and hyperparameter tuning to compare XGBoost and linear fairly
 - [ ] Data drift monitoring (Evidently)
 - [ ] MLflow Model Registry with staged promotion
 - [ ] CD workflow: automatic push to ECR and ECS deploy on merge

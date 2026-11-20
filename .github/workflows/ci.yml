@@ -31,4 +31,5 @@ jobs:
         run: pytest -v
 
       - name: Build Docker image
-        run: docker build -t wine-quality-mlops:ci .
+        run: docker build -t compute-capacity-mlops:ci .
+

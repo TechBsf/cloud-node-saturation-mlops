@@ -1,4 +1,4 @@
-import os
+﻿import os
 import time
 import boto3
 import sagemaker
@@ -9,11 +9,11 @@ REGION = os.environ["AWS_REGION"]
 BUCKET = os.environ["S3_BUCKET"]
 ROLE_ARN = os.environ["SAGEMAKER_ROLE_ARN"]
 
-DATA_S3 = f"s3://{BUCKET}/data/wine.csv"
+DATA_S3 = f"s3://{BUCKET}/data/compute_capacity.csv"
 
 # Minimal names
-JOB_NAME = f"wine-xgb-{int(time.time())}"
-ENDPOINT_NAME = "wine-quality-endpoint"
+JOB_NAME = f"compute-capacity-xgb-{int(time.time())}"
+ENDPOINT_NAME = "compute-capacity-endpoint"
 
 sm_session = sagemaker.Session(boto3.session.Session(region_name=REGION))
 print(f"Using dataset: {DATA_S3}")
@@ -47,8 +47,8 @@ xgb.set_hyperparameters(
 # but you asked "minimum". We'll do a quick in-job conversion by creating a new S3 object.
 
 s3 = boto3.client("s3", region_name=REGION)
-tmp_local = "/tmp/wine.csv"
-s3.download_file(BUCKET, "data/wine.csv", tmp_local)
+tmp_local = "/tmp/compute_capacity.csv"
+s3.download_file(BUCKET, "data/compute_capacity.csv", tmp_local)
 
 # Convert: move last column to first column
 import pandas as pd
@@ -57,10 +57,10 @@ label_col = df.columns[-1]
 cols = [label_col] + [c for c in df.columns if c != label_col]
 df = df[cols]
 
-converted_local = "/tmp/wine_converted.csv"
+converted_local = "/tmp/compute_capacity_converted.csv"
 df.to_csv(converted_local, index=False)
 
-converted_key = "data/wine_converted.csv"
+converted_key = "data/compute_capacity_converted.csv"
 s3.upload_file(converted_local, BUCKET, converted_key)
 converted_s3 = f"s3://{BUCKET}/{converted_key}"
 print(f"Converted dataset uploaded: {converted_s3}")
@@ -83,3 +83,4 @@ predictor = xgb.deploy(
 
 print("SUCCESS ✅")
 print(f"Endpoint InService: {ENDPOINT_NAME}")
+

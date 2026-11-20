@@ -4,27 +4,7 @@ Production-minded MLOps pipeline predicting cloud compute node saturation risk (
 
 ## Architecture Diagram
 
-```mermaid
-flowchart LR
-    subgraph TrainMLOps["Training & MLOps Tracking"]
-        CSV["data/compute_capacity.csv"] --> TRAIN["scripts/train_with_mlflow.py<br/>XGBRegressor"]
-        TRAIN --> MLFLOW["MLflow Tracking<br/>(Runs & Metrics)"]
-        TRAIN --> ART["model/model.joblib"]
-    end
-
-    subgraph Serving["Inference API & Container Runtime"]
-        CLIENT["Client / Telemetry JSON"] --> SCHEMA["ComputeNodeTelemetry<br/>(src/schema.py)"]
-        SCHEMA --> API["FastAPI: POST /predict<br/>(scripts/app.py)"]
-        ART --> API
-        API --> SCORE["saturation_risk_score<br/>[0.0 - 1.0]"]
-    end
-
-    subgraph Delivery["CI/CD & AWS Cloud Target"]
-        CI[".github/workflows/ci.yml<br/>pytest Quality Gates"] --> DOCKER["Docker Image Build"]
-        DOCKER --> ECR["Amazon ECR"]
-        ECR --> ECS["Amazon ECS Fargate"]
-    end
-```
+![Cloud Compute Node Saturation Risk MLOps Architecture](docs/architecture.svg)
 
 ## ML & MLOps Principles
 

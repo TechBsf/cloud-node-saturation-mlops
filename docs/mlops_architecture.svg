@@ -1,97 +1,143 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="620" viewBox="0 0 1280 620">
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="700" viewBox="0 0 1400 700">
   <defs>
     <style>
-      .title { font-family: Arial, sans-serif; font-size: 20px; font-weight: bold; fill: #1e293b; }
-      .sub { font-family: Arial, sans-serif; font-size: 13px; fill: #475569; }
-      .group-title { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #0f172a; }
-      .box-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; fill: #1e293b; }
-      .box-text { font-family: Arial, sans-serif; font-size: 11.5px; fill: #334155; }
-      .mono { font-family: Consolas, monospace; font-size: 11px; fill: #0f172a; }
-      .line { stroke: #334155; stroke-width: 1.8; fill: none; marker-end: url(#arrow); }
-      .dash-line { stroke: #64748b; stroke-width: 1.6; stroke-dasharray: 5,4; fill: none; marker-end: url(#arrow); }
+      .title { font-family: "Segoe UI", Arial, sans-serif; font-size: 22px; font-weight: 700; fill: #0f172a; }
+      .sub { font-family: "Segoe UI", Arial, sans-serif; font-size: 13px; fill: #475569; }
+      .group-title { font-family: "Segoe UI", Arial, sans-serif; font-size: 14.5px; font-weight: 700; fill: #0f172a; }
+      .group-badge { font-family: "Segoe UI", Arial, sans-serif; font-size: 11.5px; font-weight: 600; fill: #475569; }
+      .box-title { font-family: "Segoe UI", Arial, sans-serif; font-size: 13px; font-weight: 700; fill: #0f172a; }
+      .box-text { font-family: "Segoe UI", Arial, sans-serif; font-size: 11.5px; fill: #334155; }
+      .mono { font-family: Consolas, "Courier New", monospace; font-size: 11px; fill: #0f172a; }
+      .pill-text { font-family: "Segoe UI", Arial, sans-serif; font-size: 11px; font-weight: 700; fill: #ffffff; }
+      .line-blue { stroke: #0284c7; stroke-width: 1.9; fill: none; marker-end: url(#arrow-blue); }
+      .line-amber { stroke: #d97706; stroke-width: 1.9; fill: none; marker-end: url(#arrow-amber); }
+      .line-green { stroke: #16a34a; stroke-width: 1.9; fill: none; marker-end: url(#arrow-green); }
+      .dash-slate { stroke: #64748b; stroke-width: 1.7; stroke-dasharray: 5,4; fill: none; marker-end: url(#arrow-slate); }
     </style>
-    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M 0 1 L 10 5 L 0 9 z" fill="#334155"/>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#0284c7"/>
+    </marker>
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#d97706"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#16a34a"/>
+    </marker>
+    <marker id="arrow-slate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#64748b"/>
     </marker>
   </defs>
 
-  <rect x="0" y="0" width="1280" height="620" fill="#ffffff"/>
-  <text x="28" y="34" class="title">Cloud Node Saturation - ML &amp; MLOps Architecture</text>
-  <text x="28" y="54" class="sub">Telemetry validation, baseline vs XGBoost training with MLflow, pytest quality gates, FastAPI inference, and AWS guardrails</text>
+  <!-- Canvas -->
+  <rect x="0" y="0" width="1400" height="700" fill="#ffffff"/>
+  <text x="28" y="36" class="title">Cloud Node Saturation Risk — End-to-End MLOps Architecture</text>
+  <text x="28" y="58" class="sub">Pydantic telemetry contract · LinearRegression vs XGBRegressor MLflow benchmark · 7/7 Pytest &amp; CI gates · FastAPI serving · AWS OIDC / IAM / SCP guardrails</text>
 
-  <rect x="28" y="80" width="290" height="505" rx="8" fill="#f8fafc" stroke="#0284c7" stroke-width="1.6" stroke-dasharray="6,4"/>
-  <text x="44" y="104" class="group-title">1. Telemetry &amp; Schema</text>
+  <!-- Legend -->
+  <rect x="945" y="24" width="14" height="14" rx="3" fill="#0284c7"/>
+  <text x="965" y="35" class="box-text">Data &amp; Serving</text>
+  <rect x="1068" y="24" width="14" height="14" rx="3" fill="#d97706"/>
+  <text x="1088" y="35" class="box-text">Training &amp; MLflow</text>
+  <rect x="1212" y="24" width="14" height="14" rx="3" fill="#16a34a"/>
+  <text x="1232" y="35" class="box-text">CI &amp; AWS Guardrails</text>
 
-  <rect x="48" y="128" width="250" height="145" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1.4"/>
-  <text x="62" y="150" class="box-title">Input Telemetry (CSV / JSON)</text>
-  <text x="62" y="172" class="mono">- cpu_utilization_pct</text>
-  <text x="62" y="190" class="mono">- memory_utilization_pct</text>
-  <text x="62" y="208" class="mono">- request_rate_rps</text>
-  <text x="62" y="226" class="mono">- p99_latency_ms</text>
-  <text x="62" y="244" class="mono">- queue_depth · uptime_hours</text>
+  <!-- COL 1: TELEMETRY & SCHEMA -->
+  <rect x="28" y="84" width="296" height="584" rx="10" fill="#f8fafc" stroke="#0284c7" stroke-width="1.6" stroke-dasharray="6,4"/>
+  <text x="46" y="110" class="group-title">1. Telemetry &amp; Schema</text>
+  <text x="46" y="128" class="group-badge">Validated input feature contract</text>
 
-  <rect x="48" y="325" width="250" height="105" rx="6" fill="#ffffff" stroke="#0284c7" stroke-width="1.5"/>
-  <text x="62" y="348" class="box-title">Schema Validation</text>
-  <text x="62" y="368" class="mono">src/schema.py</text>
-  <text x="62" y="388" class="box-text">Pydantic contract &amp; feature length</text>
-  <text x="62" y="405" class="box-text">enforcement before train/predict</text>
+  <rect x="48" y="148" width="256" height="184" rx="7" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.4"/>
+  <rect x="48" y="148" width="256" height="28" rx="7" fill="#e2e8f0"/>
+  <text x="62" y="166" class="box-title">Compute Node Telemetry</text>
+  <text x="62" y="196" class="mono">cpu_utilization_pct</text>
+  <text x="62" y="216" class="mono">memory_utilization_pct</text>
+  <text x="62" y="236" class="mono">request_rate_rps</text>
+  <text x="62" y="256" class="mono">p99_latency_ms</text>
+  <text x="62" y="276" class="mono">queue_depth</text>
+  <text x="62" y="296" class="mono">uptime_hours</text>
 
-  <line x1="173" y1="273" x2="173" y2="323" class="line"/>
+  <rect x="48" y="376" width="256" height="144" rx="7" fill="#ffffff" stroke="#0284c7" stroke-width="1.6"/>
+  <rect x="48" y="376" width="256" height="28" rx="7" fill="#0284c7"/>
+  <text x="62" y="394" class="pill-text">Schema &amp; Dimension Guard</text>
+  <text x="62" y="424" class="mono">src/schema.py</text>
+  <text x="62" y="445" class="box-text">Pydantic model + EXPECTED_FEATURES</text>
+  <text x="62" y="465" class="box-text">Rejects invalid payloads &amp; shape</text>
+  <text x="62" y="485" class="box-text">mismatches before train or inference</text>
 
-  <rect x="355" y="80" width="430" height="505" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="1.6" stroke-dasharray="6,4"/>
-  <text x="371" y="104" class="group-title">2. Model Training &amp; MLOps Tracking</text>
+  <line x1="176" y1="332" x2="176" y2="374" class="line-blue"/>
 
-  <rect x="378" y="128" width="384" height="72" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1.4"/>
-  <text x="392" y="151" class="box-title">Training Pipeline (scripts/train_with_mlflow.py)</text>
-  <text x="392" y="171" class="box-text">Train / Validation split (80/20, random_state=42)</text>
+  <!-- COL 2: TRAINING & MLFLOW -->
+  <rect x="372" y="84" width="468" height="584" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="1.6" stroke-dasharray="6,4"/>
+  <text x="390" y="110" class="group-title">2. Model Training &amp; MLflow Tracking</text>
+  <text x="390" y="128" class="group-badge">Benchmarking &amp; reproducible artifact logging</text>
 
-  <rect x="378" y="238" width="180" height="92" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.4"/>
-  <text x="392" y="261" class="box-title">Baseline Model</text>
-  <text x="392" y="281" class="mono">LinearRegression</text>
-  <text x="392" y="302" class="box-text">Benchmark reference</text>
+  <rect x="392" y="148" width="428" height="78" rx="7" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.4"/>
+  <text x="408" y="172" class="box-title">Training Pipeline — scripts/train_with_mlflow.py</text>
+  <text x="408" y="193" class="box-text">Deterministic train/validation split (80/20, random_state=42)</text>
+  <text x="408" y="213" class="box-text">Evaluates baseline against non-linear gradient boosting</text>
 
-  <rect x="582" y="238" width="180" height="92" rx="6" fill="#ffffff" stroke="#d97706" stroke-width="1.6"/>
-  <text x="596" y="261" class="box-title">Candidate Model</text>
-  <text x="596" y="281" class="mono">XGBRegressor</text>
-  <text x="596" y="302" class="box-text">Non-linear saturation fit</text>
+  <rect x="392" y="258" width="202" height="106" rx="7" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+  <text x="406" y="281" class="box-title">Baseline Model</text>
+  <text x="406" y="303" class="mono">LinearRegression</text>
+  <text x="406" y="325" class="box-text">Simple linear reference</text>
+  <text x="406" y="344" class="box-text">on validation split</text>
 
-  <rect x="378" y="370" width="384" height="92" rx="6" fill="#ffffff" stroke="#0f766e" stroke-width="1.5"/>
-  <text x="392" y="393" class="box-title">MLflow Experiment Tracking</text>
-  <text x="392" y="413" class="box-text">Logs parameters, RMSE, MAE, R2 &amp; model runs</text>
-  <text x="392" y="433" class="box-text">Local artifacts git-ignored (mlruns/, mlartifacts/)</text>
+  <rect x="618" y="258" width="202" height="106" rx="7" fill="#ffffff" stroke="#d97706" stroke-width="1.8"/>
+  <text x="632" y="281" class="box-title">Candidate Model</text>
+  <text x="632" y="303" class="mono">XGBRegressor</text>
+  <text x="632" y="325" class="box-text">Captures non-linear</text>
+  <text x="632" y="344" class="box-text">saturation dynamics</text>
 
-  <rect x="378" y="492" width="384" height="68" rx="6" fill="#ffffff" stroke="#1e293b" stroke-width="1.5"/>
-  <text x="392" y="516" class="box-title">Serialized Model Artifact</text>
-  <text x="392" y="537" class="mono">model/model.joblib</text>
+  <rect x="392" y="398" width="428" height="112" rx="7" fill="#ffffff" stroke="#0f766e" stroke-width="1.6"/>
+  <rect x="392" y="398" width="428" height="28" rx="7" fill="#0f766e"/>
+  <text x="408" y="416" class="pill-text">MLflow Experiment Tracking</text>
+  <text x="408" y="446" class="box-text">Logs params, RMSE, MAE, R² &amp; run artifacts</text>
+  <text x="408" y="467" class="box-text">Local tracking state excluded via .gitignore</text>
+  <text x="408" y="489" class="mono">mlruns/   mlartifacts/   mlflow.db</text>
 
-  <line x1="468" y1="200" x2="468" y2="236" class="line"/>
-  <line x1="672" y1="200" x2="672" y2="236" class="line"/>
-  <line x1="468" y1="330" x2="468" y2="368" class="line"/>
-  <line x1="672" y1="330" x2="672" y2="368" class="line"/>
-  <line x1="570" y1="462" x2="570" y2="490" class="line"/>
+  <rect x="392" y="544" width="428" height="86" rx="7" fill="#ffffff" stroke="#0f172a" stroke-width="1.7"/>
+  <text x="408" y="569" class="box-title">Serialized Model Artifact</text>
+  <text x="408" y="591" class="mono">model/model.joblib</text>
+  <text x="408" y="612" class="box-text">Verified by model gate test before serving</text>
 
-  <rect x="822" y="80" width="430" height="505" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.6" stroke-dasharray="6,4"/>
-  <text x="838" y="104" class="group-title">3. Quality Gates, Serving &amp; AWS Guardrails</text>
+  <line x1="493" y1="226" x2="493" y2="256" class="line-amber"/>
+  <line x1="719" y1="226" x2="719" y2="256" class="line-amber"/>
+  <line x1="493" y1="364" x2="493" y2="396" class="line-amber"/>
+  <line x1="719" y1="364" x2="719" y2="396" class="line-amber"/>
+  <line x1="606" y1="510" x2="606" y2="542" class="line-amber"/>
 
-  <rect x="845" y="128" width="384" height="104" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="1.5"/>
-  <text x="859" y="151" class="box-title">GitHub Actions CI (ubuntu-latest)</text>
-  <text x="859" y="172" class="box-text">compileall · pytest (unit, contract, model gate)</text>
-  <text x="859" y="192" class="box-text">docker build validation on push / PR to main</text>
+  <!-- COL 3: CI, SERVING & AWS GUARDRAILS -->
+  <rect x="888" y="84" width="484" height="584" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.6" stroke-dasharray="6,4"/>
+  <text x="906" y="110" class="group-title">3. Quality Gates, Serving &amp; AWS Guardrails</text>
+  <text x="906" y="128" class="group-badge">CI checks, FastAPI inference &amp; least-privilege CD</text>
 
-  <rect x="845" y="268" width="384" height="118" rx="6" fill="#ffffff" stroke="#0284c7" stroke-width="1.5"/>
-  <text x="859" y="291" class="box-title">FastAPI Inference Service (scripts/app.py)</text>
-  <text x="859" y="312" class="mono">GET /health</text>
-  <text x="859" y="332" class="mono">POST /predict -&gt; saturation_risk_score</text>
-  <text x="859" y="354" class="box-text">Loads model/model.joblib &amp; validates payload</text>
+  <rect x="908" y="148" width="444" height="118" rx="7" fill="#ffffff" stroke="#16a34a" stroke-width="1.6"/>
+  <rect x="908" y="148" width="444" height="28" rx="7" fill="#16a34a"/>
+  <text x="924" y="166" class="pill-text">GitHub Actions CI (ubuntu-latest)</text>
+  <text x="924" y="196" class="mono">compileall · pytest -v (7/7 passing)</text>
+  <text x="924" y="217" class="box-text">API contract, telemetry schema, model gate &amp; smoke</text>
+  <text x="924" y="238" class="box-text">Docker build check on push / PR to main</text>
 
-  <rect x="845" y="422" width="384" height="138" rx="6" fill="#ffffff" stroke="#dc2626" stroke-width="1.5"/>
-  <text x="859" y="445" class="box-title">AWS Account (660178693695) &amp; CD Guardrails</text>
-  <text x="859" y="466" class="box-text">GitHub OIDC -&gt; IAM PassRole / AssumeRole</text>
-  <text x="859" y="486" class="box-text">DEPLOY_ENABLED=false (guarded under AWS SCP</text>
-  <text x="859" y="505" class="box-text">blocking ECR / ECS Fargate in this account)</text>
+  <rect x="908" y="290" width="444" height="138" rx="7" fill="#ffffff" stroke="#0284c7" stroke-width="1.6"/>
+  <rect x="908" y="290" width="444" height="28" rx="7" fill="#0284c7"/>
+  <text x="924" y="308" class="pill-text">FastAPI Inference Service — scripts/app.py</text>
+  <text x="924" y="338" class="mono">GET  /health   -&gt; readiness &amp; loaded model</text>
+  <text x="924" y="359" class="mono">POST /predict  -&gt; saturation_risk_score</text>
+  <text x="924" y="381" class="box-text">Runtime input &amp; feature dimension validation</text>
+  <text x="924" y="402" class="box-text">Tested via FastAPI TestClient &amp; httpx2</text>
 
-  <line x1="298" y1="378" x2="376" y2="164" class="line"/>
-  <line x1="762" y1="526" x2="843" y2="327" class="line"/>
-  <line x1="762" y1="526" x2="843" y2="180" class="dash-line"/>
-  <line x1="1037" y1="232" x2="1037" y2="420" class="dash-line"/>
+  <rect x="908" y="452" width="444" height="178" rx="7" fill="#ffffff" stroke="#dc2626" stroke-width="1.6"/>
+  <rect x="908" y="452" width="444" height="28" rx="7" fill="#dc2626"/>
+  <text x="924" y="470" class="pill-text">AWS Account (660178693695) &amp; CD Guardrails</text>
+  <text x="924" y="500" class="box-text">OIDC federation (no static AWS access keys)</text>
+  <text x="924" y="521" class="box-text">Least-privilege IAM PassRole &amp; AssumeRole</text>
+  <text x="924" y="543" class="mono">DEPLOY_ENABLED=false</text>
+  <text x="924" y="564" class="box-text">Gated rollout respecting AWS SCP restrictions</text>
+  <text x="924" y="585" class="box-text">blocking ECR &amp; ECS Fargate in account</text>
+
+  <!-- Clean orthogonal connectors through dedicated corridors -->
+  <path d="M 304 448 L 348 448 L 348 187 L 390 187" class="line-blue"/>
+  <path d="M 820 587 L 864 587 L 864 359 L 906 359" class="line-blue"/>
+  <path d="M 820 587 L 864 587 L 864 207 L 906 207" class="dash-slate"/>
+  <line x1="1130" y1="266" x2="1130" y2="450" class="line-green"/>
 </svg>

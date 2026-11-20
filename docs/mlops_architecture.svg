@@ -1,0 +1,97 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="620" viewBox="0 0 1280 620">
+  <defs>
+    <style>
+      .title { font-family: Arial, sans-serif; font-size: 20px; font-weight: bold; fill: #1e293b; }
+      .sub { font-family: Arial, sans-serif; font-size: 13px; fill: #475569; }
+      .group-title { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #0f172a; }
+      .box-title { font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; fill: #1e293b; }
+      .box-text { font-family: Arial, sans-serif; font-size: 11.5px; fill: #334155; }
+      .mono { font-family: Consolas, monospace; font-size: 11px; fill: #0f172a; }
+      .line { stroke: #334155; stroke-width: 1.8; fill: none; marker-end: url(#arrow); }
+      .dash-line { stroke: #64748b; stroke-width: 1.6; stroke-dasharray: 5,4; fill: none; marker-end: url(#arrow); }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#334155"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1280" height="620" fill="#ffffff"/>
+  <text x="28" y="34" class="title">Cloud Node Saturation - ML &amp; MLOps Architecture</text>
+  <text x="28" y="54" class="sub">Telemetry validation, baseline vs XGBoost training with MLflow, pytest quality gates, FastAPI inference, and AWS guardrails</text>
+
+  <rect x="28" y="80" width="290" height="505" rx="8" fill="#f8fafc" stroke="#0284c7" stroke-width="1.6" stroke-dasharray="6,4"/>
+  <text x="44" y="104" class="group-title">1. Telemetry &amp; Schema</text>
+
+  <rect x="48" y="128" width="250" height="145" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1.4"/>
+  <text x="62" y="150" class="box-title">Input Telemetry (CSV / JSON)</text>
+  <text x="62" y="172" class="mono">- cpu_utilization_pct</text>
+  <text x="62" y="190" class="mono">- memory_utilization_pct</text>
+  <text x="62" y="208" class="mono">- request_rate_rps</text>
+  <text x="62" y="226" class="mono">- p99_latency_ms</text>
+  <text x="62" y="244" class="mono">- queue_depth · uptime_hours</text>
+
+  <rect x="48" y="325" width="250" height="105" rx="6" fill="#ffffff" stroke="#0284c7" stroke-width="1.5"/>
+  <text x="62" y="348" class="box-title">Schema Validation</text>
+  <text x="62" y="368" class="mono">src/schema.py</text>
+  <text x="62" y="388" class="box-text">Pydantic contract &amp; feature length</text>
+  <text x="62" y="405" class="box-text">enforcement before train/predict</text>
+
+  <line x1="173" y1="273" x2="173" y2="323" class="line"/>
+
+  <rect x="355" y="80" width="430" height="505" rx="8" fill="#fffbeb" stroke="#d97706" stroke-width="1.6" stroke-dasharray="6,4"/>
+  <text x="371" y="104" class="group-title">2. Model Training &amp; MLOps Tracking</text>
+
+  <rect x="378" y="128" width="384" height="72" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="1.4"/>
+  <text x="392" y="151" class="box-title">Training Pipeline (scripts/train_with_mlflow.py)</text>
+  <text x="392" y="171" class="box-text">Train / Validation split (80/20, random_state=42)</text>
+
+  <rect x="378" y="238" width="180" height="92" rx="6" fill="#ffffff" stroke="#64748b" stroke-width="1.4"/>
+  <text x="392" y="261" class="box-title">Baseline Model</text>
+  <text x="392" y="281" class="mono">LinearRegression</text>
+  <text x="392" y="302" class="box-text">Benchmark reference</text>
+
+  <rect x="582" y="238" width="180" height="92" rx="6" fill="#ffffff" stroke="#d97706" stroke-width="1.6"/>
+  <text x="596" y="261" class="box-title">Candidate Model</text>
+  <text x="596" y="281" class="mono">XGBRegressor</text>
+  <text x="596" y="302" class="box-text">Non-linear saturation fit</text>
+
+  <rect x="378" y="370" width="384" height="92" rx="6" fill="#ffffff" stroke="#0f766e" stroke-width="1.5"/>
+  <text x="392" y="393" class="box-title">MLflow Experiment Tracking</text>
+  <text x="392" y="413" class="box-text">Logs parameters, RMSE, MAE, R2 &amp; model runs</text>
+  <text x="392" y="433" class="box-text">Local artifacts git-ignored (mlruns/, mlartifacts/)</text>
+
+  <rect x="378" y="492" width="384" height="68" rx="6" fill="#ffffff" stroke="#1e293b" stroke-width="1.5"/>
+  <text x="392" y="516" class="box-title">Serialized Model Artifact</text>
+  <text x="392" y="537" class="mono">model/model.joblib</text>
+
+  <line x1="468" y1="200" x2="468" y2="236" class="line"/>
+  <line x1="672" y1="200" x2="672" y2="236" class="line"/>
+  <line x1="468" y1="330" x2="468" y2="368" class="line"/>
+  <line x1="672" y1="330" x2="672" y2="368" class="line"/>
+  <line x1="570" y1="462" x2="570" y2="490" class="line"/>
+
+  <rect x="822" y="80" width="430" height="505" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.6" stroke-dasharray="6,4"/>
+  <text x="838" y="104" class="group-title">3. Quality Gates, Serving &amp; AWS Guardrails</text>
+
+  <rect x="845" y="128" width="384" height="104" rx="6" fill="#ffffff" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="859" y="151" class="box-title">GitHub Actions CI (ubuntu-latest)</text>
+  <text x="859" y="172" class="box-text">compileall · pytest (unit, contract, model gate)</text>
+  <text x="859" y="192" class="box-text">docker build validation on push / PR to main</text>
+
+  <rect x="845" y="268" width="384" height="118" rx="6" fill="#ffffff" stroke="#0284c7" stroke-width="1.5"/>
+  <text x="859" y="291" class="box-title">FastAPI Inference Service (scripts/app.py)</text>
+  <text x="859" y="312" class="mono">GET /health</text>
+  <text x="859" y="332" class="mono">POST /predict -&gt; saturation_risk_score</text>
+  <text x="859" y="354" class="box-text">Loads model/model.joblib &amp; validates payload</text>
+
+  <rect x="845" y="422" width="384" height="138" rx="6" fill="#ffffff" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="859" y="445" class="box-title">AWS Account (660178693695) &amp; CD Guardrails</text>
+  <text x="859" y="466" class="box-text">GitHub OIDC -&gt; IAM PassRole / AssumeRole</text>
+  <text x="859" y="486" class="box-text">DEPLOY_ENABLED=false (guarded under AWS SCP</text>
+  <text x="859" y="505" class="box-text">blocking ECR / ECS Fargate in this account)</text>
+
+  <line x1="298" y1="378" x2="376" y2="164" class="line"/>
+  <line x1="762" y1="526" x2="843" y2="327" class="line"/>
+  <line x1="762" y1="526" x2="843" y2="180" class="dash-line"/>
+  <line x1="1037" y1="232" x2="1037" y2="420" class="dash-line"/>
+</svg>

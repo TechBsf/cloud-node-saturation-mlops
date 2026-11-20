@@ -1,4 +1,4 @@
-# scripts/run_training_job.py
+﻿# scripts/run_training_job.py
 # Same estimator as create_pipeline.py, but launched as a plain training job
 # (no SageMaker Pipelines).
 
@@ -21,7 +21,7 @@ sess = sagemaker.Session(
     default_bucket=BUCKET,
 )
 
-train_s3_uri = f"s3://{BUCKET}/data/wine.csv"
+train_s3_uri = f"s3://{BUCKET}/data/compute_capacity.csv"
 env = {"MLFLOW_TRACKING_URI": MLFLOW_URI} if MLFLOW_URI else {}
 
 estimator = SKLearn(
@@ -38,7 +38,7 @@ estimator = SKLearn(
     code_location=f"s3://{BUCKET}/code",
 )
 
-job_name = f"wine-sklearn-{int(time.time())}"
+job_name = f"compute-capacity-sklearn-{int(time.time())}"
 print("Starting training job:", job_name)
 estimator.fit(
     {"train": TrainingInput(s3_data=train_s3_uri, content_type="text/csv")},
@@ -46,3 +46,4 @@ estimator.fit(
     wait=True,
 )
 print("Model artifacts:", estimator.model_data)
+

@@ -1,4 +1,4 @@
-# scripts/create_pipeline.py
+﻿# scripts/create_pipeline.py
 
 import os
 import boto3
@@ -15,11 +15,11 @@ BUCKET = os.environ["S3_BUCKET"]
 # Optional: the pipeline also runs without an MLflow tracking server
 MLFLOW_URI = os.environ.get("MLFLOW_TRACKING_URI", "").rstrip("/")
 
-PIPELINE_NAME = "wine-mlflow-pipeline"
+PIPELINE_NAME = "compute-capacity-mlflow-pipeline"
 
 sess = sagemaker.Session(boto3.Session(region_name=REGION))
 
-train_s3_uri = f"s3://{BUCKET}/data/wine.csv"
+train_s3_uri = f"s3://{BUCKET}/data/compute_capacity.csv"
 
 env = {"MLFLOW_TRACKING_URI": MLFLOW_URI} if MLFLOW_URI else {}
 
@@ -37,7 +37,7 @@ estimator = SKLearn(
 )
 
 step_train = TrainingStep(
-    name="TrainWineModel",
+    name="TrainComputeCapacityModel",
     estimator=estimator,
     inputs={"train": TrainingInput(s3_data=train_s3_uri, content_type="text/csv")}
 )
@@ -51,3 +51,4 @@ pipeline = Pipeline(
 pipeline.upsert(role_arn=ROLE_ARN)
 execution = pipeline.start()
 print("Pipeline started:", execution.arn)
+

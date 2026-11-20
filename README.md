@@ -1,19 +1,30 @@
 # Cloud Compute Node Saturation Risk MLOps Pipeline
 
-Production-minded MLOps pipeline for cloud compute node saturation risk prediction using **XGBoost**, **MLflow**, **FastAPI**, **Docker**, **Amazon ECR**, and **Amazon ECS Fargate**, designed with automated quality gates and on-demand execution.
+Production-minded MLOps pipeline predicting cloud compute node saturation risk (saturation_risk_score in [0.0, 1.0]) using **XGBoost**, **MLflow**, **FastAPI**, **Docker**, **Amazon ECR**, and **Amazon ECS Fargate**, backed by automated pytest quality gates.
 
-## Architecture & Stack
+## Architecture
 
-- **Model & Tracking**: `XGBRegressor` (`XGBoost`) trained on cloud node telemetry (`ComputeNodeTelemetry` Pydantic schema validated in `src/schema.py`, dataset `data/compute_capacity.csv`) and tracked with `MLflow` (`model/model.joblib`).
-- **Inference API**: `FastAPI` service (`scripts/app.py`) exposing `POST /predict` to score `saturation_risk_score` (`0.0` to `1.0`).
-- **CI & Quality Gates**: Automated `pytest` checks (`tests/test_mlops_quality.py`, `tests/test_model_gate.py`, `tests/test_smoke.py`) and `Docker` image build verification in `.github/workflows/ci.yml`.
-- **Cloud Deployment**: Containerized workloads targeting `Amazon ECR` and `Amazon ECS Fargate` (plus optional SageMaker job/pipeline scripts under `scripts/`).
+- **Training & Tracking**: scripts/train_with_mlflow.py trains an XGBRegressor on data/compute_capacity.csv, logs metrics/artifacts in MLflow, and exports model/model.joblib.
+- **Validation Contract**: src/schema.py validates ComputeNodeTelemetry (cpu_utilization_pct, memory_utilization_pct, equest_rate_rps, p99_latency_ms, queue_depth, uptime_hours).
+- **Inference API**: scripts/app.py serves POST /predict via FastAPI and returns saturation_risk_score.
+- **CI & Containerization**: .github/workflows/ci.yml runs pytest quality gates and docker build checks for Amazon ECR / Amazon ECS Fargate deployment.
 
-## Local Usage
+## Local Commands
 
 ```powershell
 .\venv\Scripts\python.exe scripts\train_with_mlflow.py
 .\venv\Scripts\python.exe -m pytest -v
 ```
 
-Send a JSON payload matching `ComputeNodeTelemetry` in `src/schema.py` to `http://localhost:8000/predict`.
+## Sample POST /predict Payload
+
+```json
+{
+  "cpu_utilization_pct": 82.5,
+  "memory_utilization_pct": 76.0,
+  "request_rate_rps": 1450.0,
+  "p99_latency_ms": 185.0,
+  "queue_depth": 24,
+  "uptime_hours": 312.0
+}
+```

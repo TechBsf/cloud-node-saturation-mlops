@@ -4,7 +4,7 @@ Production-minded MLOps pipeline predicting cloud compute node saturation risk (
 
 ## Architecture Diagram
 
-![Cloud Compute Node Saturation Risk MLOps Architecture](docs/architecture.svg)
+![Architecture MLOps](docs/architecture.svg)
 
 ## ML & MLOps Principles
 
@@ -18,17 +18,4 @@ Production-minded MLOps pipeline predicting cloud compute node saturation risk (
 ```powershell
 .\venv\Scripts\python.exe scripts\train_with_mlflow.py
 .\venv\Scripts\python.exe -m pytest -v
-```
-
-## Sample POST /predict Payload
-
-```json
-{
-  "cpu_utilization_pct": 82.5,
-  "memory_utilization_pct": 76.0,
-  "request_rate_rps": 1450.0,
-  "p99_latency_ms": 185.0,
-  "queue_depth": 24,
-  "uptime_hours": 312.0
-}
 ```

@@ -4,7 +4,7 @@
 ![Python](https://img.shields.io/badge/python-3.11-blue)
 ![XGBoost](https://img.shields.io/badge/model-XGBoost-orange)
 ![FastAPI](https://img.shields.io/badge/API-FastAPI-009688)
-![AWS](https://img.shields.io/badge/deploy-ECR%20%2B%20ECS%20Fargate-FF9900)
+![AWS](https://img.shields.io/badge/AWS-S3%20%7C%20ECR%2FECS%20Ready-FF9900)
 
 End-to-end MLOps pipeline predicting cloud compute node saturation risk (`saturation_risk_score` in `[0.0, 1.0]`) with **XGBoost**, **MLflow**, **FastAPI**, **Docker**, **Amazon ECR** and **Amazon ECS Fargate**, gated by automated `pytest` quality checks.
 
@@ -53,8 +53,7 @@ The container image is designed to be pushed to **Amazon ECR** and served on **A
 
 - **Active AWS Account**: 660178693695 (IAM user mlops-user, monthly budget My Monthly Cost Budget monitored via **AWS Budgets**).
 - **Organization SCP Restriction**: **Amazon ECR** and **Amazon ECS Fargate** deployments are blocked on account 660178693695 by an organization Service Control Policy (explicit deny).
-- **Pipeline State**: DEPLOY_ENABLED is set to false and the **CD - Deploy to ECS Fargate** workflow remains disabled (disabled_manually) to avoid failed deployment runs; **MLOps CI** stays active, while **Amazon S3** (mlops-wine-project-660178693695), **AWS Budgets**, and local execution/tests (FastAPI, XGBoost, MLflow) are used.
-
+- **Pipeline State**: DEPLOY_ENABLED=false and the **CD - Deploy to ECS Fargate** workflow remains disabled (disabled_manually) to avoid failed deployment runs; **MLOps CI** stays active, while **Amazon S3** (mlops-wine-project-660178693695), **AWS Budgets**, and local execution/tests (FastAPI, XGBoost, MLflow) are used.
 
 ## ML & MLOps Principles
 

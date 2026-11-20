@@ -1,17 +1,99 @@
 # Cloud Compute Node Saturation Risk MLOps Pipeline
 
-Production-minded MLOps pipeline predicting cloud compute node saturation risk (`saturation_risk_score` in `[0.0, 1.0]`) using **XGBoost**, **MLflow**, **FastAPI**, **Docker**, **Amazon ECR**, and **Amazon ECS Fargate**, backed by automated `pytest` quality gates.
+[![CI](https://github.com/TON_USER/TON_REPO/actions/workflows/ci.yml/badge.svg)](https://github.com/TON_USER/TON_REPO/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.11-blue)
+![XGBoost](https://img.shields.io/badge/model-XGBoost-orange)
+![FastAPI](https://img.shields.io/badge/API-FastAPI-009688)
+![AWS](https://img.shields.io/badge/deploy-ECR%20%2B%20ECS%20Fargate-FF9900)
 
-## Architecture Diagram
+End-to-end MLOps pipeline predicting cloud compute node saturation risk (`saturation_risk_score` in `[0.0, 1.0]`) with **XGBoost**, **MLflow**, **FastAPI**, **Docker**, **Amazon ECR** and **Amazon ECS Fargate**, gated by automated `pytest` quality checks.
+
+> **Why this project?** Node saturation is predictive maintenance applied to cloud infrastructure: degrading signals (CPU, memory, latency, queue depth) are scored *before* the failure happens. I come from reliability engineering (FMEA, CMMS, predictive maintenance) and applied the same reasoning to an MLOps stack.
+
+## Architecture
 
 ![Architecture MLOps](docs/architecture.svg)
 
+## Results
+
+Evaluated on a held-out test set (`XX`% of the data, fixed random seed).
+
+| Model | RMSE | MAE | R² |
+|---|---|---|---|
+| Baseline (mean predictor) | XX | XX | XX |
+| Linear Regression | XX | XX | XX |
+| **XGBRegressor (final)** | **XX** | **XX** | **XX** |
+
+XGBoost reduces RMSE by **XX %** versus the linear baseline. All runs, parameters and metrics are tracked in MLflow.
+
+> Data: `data/compute_capacity.csv` is **synthetic / public (choisis)**, generated to mimic node telemetry.
+
+## Quick Start
+
+```powershell
+# 1. Build the image
+docker build -t saturation-risk-api .
+
+# 2. Run the API
+docker run -p 8000:8000 saturation-risk-api
+
+# 3. Call the endpoint
+curl -X POST http://localhost:8000/predict `
+  -H "Content-Type: application/json" `
+  -d '{"cpu_utilization_pct": 85, "memory_utilization_pct": 78, "request_rate_rps": 1200, "p99_latency_ms": 450, "queue_depth": 40, "uptime_hours": 320}'
+```
+
+Example response:
+
+```json
+{ "saturation_risk_score": 0.87 }
+```
+
+Interactive API docs (Swagger): `http://localhost:8000/docs`
+
+## Deployment (AWS)
+
+The container image is pushed to **Amazon ECR** and served on **Amazon ECS Fargate** (serverless containers, no instance management).
+
+<!-- Ajoute tes captures dans docs/ puis décommente :
+![ECS service running](docs/ecs-service.png)
+![MLflow runs](docs/mlflow-runs.png)
+![Swagger UI](docs/swagger.png)
+-->
+
 ## ML & MLOps Principles
 
-- **Supervised Regression Model**: Trains an `XGBRegressor` on node telemetry features (`cpu_utilization_pct`, `memory_utilization_pct`, `request_rate_rps`, `p99_latency_ms`, `queue_depth`, `uptime_hours`) to predict `saturation_risk_score` in `[0.0, 1.0]`.
-- **Reproducibility & Artifact Gate**: Tracks training runs in `MLflow`, exports `model/model.joblib`, and verifies model loading/inference before release.
-- **Contract & API Reliability**: Enforces schema validation via `ComputeNodeTelemetry` in `src/schema.py` on `POST /predict` to reject invalid telemetry early.
-- **Automated CI & Container Readiness**: Runs `pytest` suites (`test_api_contract.py`, `test_mlops_quality.py`, `test_model_gate.py`, `test_smoke.py`) and validates the `Docker` build for `Amazon ECR` and `Amazon ECS Fargate`.
+- **Supervised Regression Model**: `XGBRegressor` trained on node telemetry (`cpu_utilization_pct`, `memory_utilization_pct`, `request_rate_rps`, `p99_latency_ms`, `queue_depth`, `uptime_hours`) to predict `saturation_risk_score` in `[0.0, 1.0]`.
+- **Reproducibility & Artifact Gate**: training runs tracked in `MLflow`, model exported to `model/model.joblib`, loading and inference verified before release.
+- **Contract & API Reliability**: strict schema validation via `ComputeNodeTelemetry` (`src/schema.py`) on `POST /predict` rejects invalid telemetry early.
+- **Automated CI & Container Readiness**: `pytest` suites (`test_api_contract.py`, `test_mlops_quality.py`, `test_model_gate.py`, `test_smoke.py`) and Docker build validated for Amazon ECR / ECS Fargate.
+
+## Design Decisions & Limitations
+
+- **Why XGBoost**: captures non-linear interactions between load signals on tabular data, fast to train and serve.
+- **Why ECS Fargate over EKS**: a single inference service does not justify Kubernetes operational overhead.
+- **Limitations**: synthetic data, no live traffic, no drift monitoring yet.
+
+## Roadmap
+
+- [ ] Data drift monitoring (Evidently)
+- [ ] MLflow Model Registry with staged promotion
+- [ ] CD workflow: automatic push to ECR and ECS deploy on merge
+- [ ] Input data validation (Great Expectations / Pandera)
+
+## Repository Structure
+
+```text
+.
+├── data/                 # compute_capacity.csv
+├── docs/                 # architecture diagram, screenshots
+├── model/                # model.joblib
+├── scripts/              # train_with_mlflow.py, app.py
+├── src/                  # schema.py
+├── tests/                # pytest suites
+├── .github/workflows/    # ci.yml
+└── Dockerfile
+```
 
 ## Local Commands
 

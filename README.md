@@ -47,7 +47,13 @@ Interactive API docs (Swagger): `http://localhost:8000/docs`
 
 ## Deployment (AWS)
 
-The container image is pushed to **Amazon ECR** and served on **Amazon ECS Fargate** (serverless containers, no instance management).
+The container image is designed to be pushed to **Amazon ECR** and served on **Amazon ECS Fargate** (serverless containers, no instance management).
+
+### Current Account & Organization Constraint (660178693695)
+
+- **Active AWS Account**: 660178693695 (IAM user mlops-user, monthly budget My Monthly Cost Budget monitored via **AWS Budgets**).
+- **Organization SCP Restriction**: **Amazon ECR** and **Amazon ECS Fargate** deployments are blocked on account 660178693695 by an organization Service Control Policy (explicit deny).
+- **Pipeline State**: DEPLOY_ENABLED is set to false and the **CD - Deploy to ECS Fargate** workflow remains disabled (disabled_manually) to avoid failed deployment runs; **MLOps CI** stays active, while **Amazon S3** (mlops-wine-project-660178693695), **AWS Budgets**, and local execution/tests (FastAPI, XGBoost, MLflow) are used.
 
 
 ## ML & MLOps Principles
@@ -61,14 +67,14 @@ The container image is pushed to **Amazon ECR** and served on **Amazon ECS Farga
 
 - **Why XGBoost**: handles non-linear interactions between load signals and scales to richer telemetry. On the current dataset a linear model performs equally well, so the gain is not demonstrated yet; this is tracked in the Roadmap.
 - **Why ECS Fargate over EKS**: a single inference service does not justify Kubernetes operational overhead.
-- **Limitations**: synthetic data, no live traffic, no drift monitoring yet.
+- **Limitations**: synthetic data, no live traffic, no drift monitoring yet, and cloud container deployment (ECR / ECS Fargate) is currently blocked by an organization SCP on account 660178693695.
 
 ## Roadmap
 
 - [ ] 5-fold cross-validation and hyperparameter tuning to compare XGBoost and linear fairly
 - [ ] Data drift monitoring (Evidently)
 - [ ] MLflow Model Registry with staged promotion
-- [ ] CD workflow: automatic push to ECR and ECS deploy on merge
+- [ ] CD workflow: automatic push to ECR and ECS deploy on merge (blocked on account 660178693695 by organization SCP; DEPLOY_ENABLED=false)
 - [ ] Input data validation (Great Expectations / Pandera)
 
 ## Repository Structure
@@ -91,8 +97,3 @@ The container image is pushed to **Amazon ECR** and served on **Amazon ECS Farga
 .\venv\Scripts\python.exe scripts\train_with_mlflow.py
 .\venv\Scripts\python.exe -m pytest -v
 ```
-## Compte AWS et d�ploiement
-
-- **Compte AWS actif** : 660178693695 (utilisateur IAM mlops-user, budget mensuel My Monthly Cost Budget surveill�).
-- **Contrainte d'organisation (SCP)** : le d�ploiement vers **Amazon ECR** et **Amazon ECS Fargate** est bloqu� par une politique d'organisation (explicit deny).
-- **�tat du pipeline** : DEPLOY_ENABLED est d�fini sur false et le workflow **CD - Deploy to ECS Fargate** reste d�sactiv� (disabled_manually) afin d'�viter des �checs de d�ploiement ; la CI (MLOps CI) reste active et les op�rations **Amazon S3** (mlops-wine-project-660178693695), **AWS Budgets** et l'ex�cution/tests locaux (FastAPI, XGBoost, MLflow) sont utilis�s.

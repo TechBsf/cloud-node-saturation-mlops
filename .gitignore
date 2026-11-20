@@ -4,3 +4,8 @@
 venv/
 .env
 mlruns/
+
+mlartifacts/
+mlflow.db
+.pytest_cache/
+.coverage

@@ -1,6 +1,6 @@
 # Cloud Compute Node Saturation Risk MLOps Pipeline
 
-[![CI](https://github.com/TechBsf/wine-quality-mlops-aw/actions/workflows/ci.yml/badge.svg)](https://github.com/TechBsf/wine-quality-mlops-aw/actions/workflows/ci.yml)
+[![CI](https://github.com/TechBsf/node-saturation-mlops/actions/workflows/ci.yml/badge.svg)](https://github.com/TechBsf/node-saturation-mlops/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11-blue)
 ![XGBoost](https://img.shields.io/badge/model-XGBoost-orange)
 ![FastAPI](https://img.shields.io/badge/API-FastAPI-009688)

@@ -5,7 +5,7 @@ Production-minded MLOps pipeline predicting cloud compute node saturation risk (
 ## Architecture
 
 - **Training & Tracking**: scripts/train_with_mlflow.py trains an XGBRegressor on data/compute_capacity.csv, logs metrics/artifacts in MLflow, and exports model/model.joblib.
-- **Validation Contract**: src/schema.py validates ComputeNodeTelemetry (cpu_utilization_pct, memory_utilization_pct, equest_rate_rps, p99_latency_ms, queue_depth, uptime_hours).
+- **Validation Contract**: src/schema.py validates ComputeNodeTelemetry (cpu_utilization_pct, memory_utilization_pct, request_rate_rps, p99_latency_ms, queue_depth, uptime_hours).
 - **Inference API**: scripts/app.py serves POST /predict via FastAPI and returns saturation_risk_score.
 - **CI & Containerization**: .github/workflows/ci.yml runs pytest quality gates and docker build checks for Amazon ECR / Amazon ECS Fargate deployment.
 
@@ -22,7 +22,7 @@ Production-minded MLOps pipeline predicting cloud compute node saturation risk (
 {
   "cpu_utilization_pct": 82.5,
   "memory_utilization_pct": 76.0,
-  "request_rate_rps": 1450.0,
+  "rrequest_rate_rps": 1450.0,
   "p99_latency_ms": 185.0,
   "queue_depth": 24,
   "uptime_hours": 312.0

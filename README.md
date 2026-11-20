@@ -8,8 +8,6 @@
 
 End-to-end MLOps pipeline predicting cloud compute node saturation risk (`saturation_risk_score` in `[0.0, 1.0]`) with **XGBoost**, **MLflow**, **FastAPI**, **Docker**, **Amazon ECR** and **Amazon ECS Fargate**, gated by automated `pytest` quality checks.
 
-> **Why this project?** Node saturation is predictive maintenance applied to cloud infrastructure: degrading signals (CPU, memory, latency, queue depth) are scored *before* the failure happens. I come from reliability engineering (FMEA, CMMS, predictive maintenance) and applied the same reasoning to an MLOps stack.
-
 ## Architecture
 
 ![Architecture MLOps](docs/architecture.svg)

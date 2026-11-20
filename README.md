@@ -1,4 +1,4 @@
-# Cloud Compute Node Saturation Risk MLOps Pipeline
+﻿# Cloud Compute Node Saturation Risk MLOps Pipeline
 
 [![CI](https://github.com/TechBsf/node-saturation-mlops/actions/workflows/ci.yml/badge.svg)](https://github.com/TechBsf/node-saturation-mlops/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.11-blue)
@@ -91,3 +91,8 @@ The container image is pushed to **Amazon ECR** and served on **Amazon ECS Farga
 .\venv\Scripts\python.exe scripts\train_with_mlflow.py
 .\venv\Scripts\python.exe -m pytest -v
 ```
+## Compte AWS et d�ploiement
+
+- **Compte AWS actif** : 660178693695 (utilisateur IAM mlops-user, budget mensuel My Monthly Cost Budget surveill�).
+- **Contrainte d'organisation (SCP)** : le d�ploiement vers **Amazon ECR** et **Amazon ECS Fargate** est bloqu� par une politique d'organisation (explicit deny).
+- **�tat du pipeline** : DEPLOY_ENABLED est d�fini sur false et le workflow **CD - Deploy to ECS Fargate** reste d�sactiv� (disabled_manually) afin d'�viter des �checs de d�ploiement ; la CI (MLOps CI) reste active et les op�rations **Amazon S3** (mlops-wine-project-660178693695), **AWS Budgets** et l'ex�cution/tests locaux (FastAPI, XGBoost, MLflow) sont utilis�s.

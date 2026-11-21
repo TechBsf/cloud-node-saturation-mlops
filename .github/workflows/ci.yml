@@ -32,7 +32,7 @@ jobs:
         run: ruff check .
 
       - name: Run Mypy (Type Checking)
-        run: mypy .
+        run: mypy src
 
       - name: Train model (produces model/model.joblib)
         run: python scripts/train_with_mlflow.py

@@ -56,7 +56,8 @@ cols = [label_col] + [c for c in df.columns if c != label_col]
 df = df[cols]
 
 converted_local = "/tmp/compute_capacity_converted.csv"
-df.to_csv(converted_local, index=False)
+# XGBoost built-in (CSV) : pas de ligne d'en-tête, label en première colonne.
+df.to_csv(converted_local, index=False, header=False)
 
 converted_key = "data/compute_capacity_converted.csv"
 s3.upload_file(converted_local, BUCKET, converted_key)

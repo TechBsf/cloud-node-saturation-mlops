@@ -44,11 +44,6 @@ flowchart LR
     S3["Amazon S3"] -.->|"datasets and artifacts"| SAGEMAKER
 ```
 
-The repository provides an architecture SVG below for a detailed visual view. The Mermaid diagram is
-the canonical, text-readable overview maintained with the README.
-
-[Open the detailed architecture SVG](docs/mlops_architecture.svg)
-
 ### Implementation map
 
 - Data validation and split: [`src/data/processing.py`](src/data/processing.py), [`src/data/splitting.py`](src/data/splitting.py)

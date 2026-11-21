@@ -49,7 +49,7 @@ known-first-party = ["src", "scripts", "tests"]
 python_version = "3.10"
 strict = true
 ignore_missing_imports = true
-exclude = ["tests/", "scripts/"]
+exclude = ["^build/", "^dist/", "^\\.venv/", "^venv/", "tests/", "scripts/"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

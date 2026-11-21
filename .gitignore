@@ -13,3 +13,6 @@ mlflow.db
 model/*.joblib
 *.log
 *.err
+build/
+dist/
+*.egg-info/

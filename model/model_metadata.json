@@ -1,0 +1,58 @@
+{
+  "selected_model": "LinearRegression",
+  "model_type": "LinearRegression",
+  "dataset_sha256": "c1e4997a49e435051072e09de8b71bb1b1c4a960080f79ed63d9be795219706d",
+  "row_count": 1500,
+  "features": [
+    "cpu_utilization_pct",
+    "memory_utilization_pct",
+    "request_rate_rps",
+    "p99_latency_ms",
+    "queue_depth",
+    "uptime_hours"
+  ],
+  "target": "saturation_risk_score",
+  "reference_statistics": {
+    "cpu_utilization_pct": {
+      "mean": 51.64489333333333,
+      "std": 17.86063923672905
+    },
+    "memory_utilization_pct": {
+      "mean": 57.491146666666666,
+      "std": 16.188358969618932
+    },
+    "request_rate_rps": {
+      "mean": 172.53322666666665,
+      "std": 170.7361613530782
+    },
+    "p99_latency_ms": {
+      "mean": 51.13236666666667,
+      "std": 27.302063010487714
+    },
+    "queue_depth": {
+      "mean": 2.152,
+      "std": 2.1190932898090975
+    },
+    "uptime_hours": {
+      "mean": 1096.8346666666666,
+      "std": 626.7807831277916
+    }
+  },
+  "random_state": 42,
+  "split": {
+    "train": 0.7,
+    "validation": 0.15,
+    "test": 0.15000000000000005
+  },
+  "model_gate": {
+    "approved": false,
+    "minimum_rmse_reduction": 0.01,
+    "candidate_cv_rmse": 0.03089434190846176,
+    "baseline_cv_rmse": 0.02927702869970762
+  },
+  "test_metrics": {
+    "rmse": 0.03043747050772604,
+    "mae": 0.0235655049748818,
+    "r2": 0.8736606111112484
+  }
+}

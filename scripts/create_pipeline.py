@@ -1,11 +1,11 @@
-﻿# scripts/create_pipeline.py
+# scripts/create_pipeline.py
 
 import os
+
 import boto3
 import sagemaker
-
-from sagemaker.sklearn.estimator import SKLearn
 from sagemaker.inputs import TrainingInput
+from sagemaker.sklearn.estimator import SKLearn
 from sagemaker.workflow.pipeline import Pipeline
 from sagemaker.workflow.steps import TrainingStep
 
@@ -26,6 +26,7 @@ env = {"MLFLOW_TRACKING_URI": MLFLOW_URI} if MLFLOW_URI else {}
 estimator = SKLearn(
     entry_point="train_with_mlflow.py",
     source_dir="scripts",
+    dependencies=["src"],
     role=ROLE_ARN,
     instance_type="ml.m5.large",
     instance_count=1,
@@ -33,22 +34,21 @@ estimator = SKLearn(
     py_version="py3",
     sagemaker_session=sess,
     environment=env,
-    output_path=f"s3://{BUCKET}/models/"
+    output_path=f"s3://{BUCKET}/models/",
 )
 
 step_train = TrainingStep(
     name="TrainComputeCapacityModel",
     estimator=estimator,
-    inputs={"train": TrainingInput(s3_data=train_s3_uri, content_type="text/csv")}
+    inputs={"train": TrainingInput(s3_data=train_s3_uri, content_type="text/csv")},
 )
 
 pipeline = Pipeline(
     name=PIPELINE_NAME,
     steps=[step_train],
-    sagemaker_session=sess
+    sagemaker_session=sess,
 )
 
 pipeline.upsert(role_arn=ROLE_ARN)
 execution = pipeline.start()
 print("Pipeline started:", execution.arn)
-

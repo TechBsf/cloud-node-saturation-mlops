@@ -1,133 +1,77 @@
 # Cloud Node Saturation MLOps
 
-[![MLOps CI](https://github.com/TechBsf/cloud-node-saturation-mlops/actions/workflows/ci.yml/badge.svg)](https://github.com/TechBsf/cloud-node-saturation-mlops/actions/workflows/ci.yml)
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
-![AWS](https://img.shields.io/badge/AWS-SageMaker%20%7C%20ECS-232F3E?logo=amazonaws&logoColor=white)
+End-to-end MLOps pipeline for predicting cloud node saturation risk (`saturation_risk_score`) from infrastructure telemetry (CPU utilization, memory utilization, request rate, P99 latency, queue depth, uptime). The project compares a `LinearRegression` baseline against an `XGBRegressor` candidate, applies a model promotion gate (RMSE improvement ≥ 1%), and exposes a real-time inference API via FastAPI.
 
-An end-to-end MLOps project that predicts the saturation-risk score of a cloud
-compute node from CPU, memory, request-rate, latency, queue-depth and uptime
-telemetry.
-
-**Current result:** `LinearRegression` is the selected model. XGBoost improves
-the hold-out RMSE slightly, but it does not improve the 5-fold
-cross-validation comparison strongly enough to replace the baseline. The
-selected model reaches `RMSE 0.0304`,
-`MAE 0.0236` and `R2 0.8737` on the test set.
-
-> This is a portfolio/MLOps demonstration using a synthetic 1,500-row dataset.
-> AWS deployment scripts and GitHub Actions CD are configured, but no AWS
-> production deployment has been executed locally.
+Designed for reproducibility, train/serve anti-skew, and cloud-aware deployment (SageMaker / ECS Fargate).
 
 ---
 
-## Architecture
+## Project Scope & Status
 
-### 1. Training and model selection
+| Item | Detail |
+|------|--------|
+| **Maturity** | Functional prototype (version 0.1.0), local training validated, unit tests passing |
+| **Dataset** | `data/compute_capacity.csv` — synthetic CSV with 1,500 rows (not committed; generated locally) |
+| **Selected model** | `LinearRegression` (XGBoost rejected by the gate: RMSE improvement < 1%) |
+| **Model artifacts** | `model/model.joblib` + `model/model_metadata.json` — **not committed**; must be trained before use |
+| **Cloud deployment** | SageMaker scripts and ECS Fargate workflow present, **not executed locally** (require AWS credentials and existing infrastructure) |
+| **Known constraints** | ECR and ECS Fargate restricted by SCP on the target AWS account; CD workflow disabled by default (`DEPLOY_ENABLED=false`) |
+| **MLflow tracking** | Optional, local storage by default; no remote server configured |
 
-```mermaid
-flowchart TD
-    CSV[("Synthetic telemetry CSV")] --> LOAD["Load and validate"]
-    LOAD --> CHECK{"Required features, types,\nmissing values and target range"}
-    CHECK -->|"Valid"| SPLIT["Deterministic split 70 / 15 / 15"]
-    CHECK -->|"Invalid"| FAIL["Stop training"]
+---
 
-    SPLIT --> TRAIN["Training data"]
-    SPLIT --> VALID["Validation data"]
-    SPLIT --> TEST["Held-out test data"]
-
-    TRAIN --> LINEAR["LinearRegression baseline"]
-    TRAIN --> XGB["XGBRegressor candidate"]
-    VALID --> LINEAR
-    VALID --> XGB
-
-    LINEAR --> CV["5-fold cross-validation"]
-    XGB --> CV
-    CV --> GATE{"Candidate CV RMSE\nimprovement >= 1%"}
-    GATE -->|"Yes"| SELECT_XGB["Promote XGBRegressor"]
-    GATE -->|"No"| SELECT_LINEAR["Retain LinearRegression"]
-
-    TEST --> FINAL["Final test metrics"]
-    SELECT_LINEAR --> FINAL
-    SELECT_XGB --> FINAL
-    FINAL --> ARTIFACT["joblib artifact + model_metadata.json"]
-    ARTIFACT --> MLFLOW["MLflow runs"]
-
-    classDef data fill:#DBEAFE,stroke:#2563EB,color:#1E3A5F
-    classDef process fill:#DCFCE7,stroke:#16A34A,color:#14532D
-    classDef decision fill:#FEF3C7,stroke:#D97706,color:#78350F
-    classDef output fill:#F3E8FF,stroke:#9333EA,color:#581C87
-    classDef error fill:#FEE2E2,stroke:#DC2626,color:#7F1D1D
-
-    class CSV,TRAIN,VALID,TEST data
-    class LOAD,SPLIT,LINEAR,XGB,CV,FINAL,MLFLOW process
-    class CHECK,GATE decision
-    class ARTIFACT,SELECT_LINEAR,SELECT_XGB output
-    class FAIL error
-```
-
-### 2. Real-time inference
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant C as API client
-    participant A as FastAPI
-    participant V as Pydantic contract
-    participant F as Feature formatter
-    participant M as Selected model
-    participant O as Metrics and drift
-
-    C->>A: POST /predict
-    A->>V: Validate fields and bounds
-    alt Invalid request
-        V-->>A: Validation error
-        A-->>C: HTTP 422
-    else Valid request
-        V->>F: Convert telemetry
-        F->>F: Canonical six-feature order
-        F->>M: Predict from one row
-        M-->>A: Raw saturation score
-        A->>A: Clip score to [0, 1]
-        A->>O: Update latency, metrics and drift
-        A-->>C: HTTP 200 + score
-    end
-```
-
-### 3. CI and deployment
+## Architecture & Flow
 
 ```mermaid
 flowchart LR
-    PR["Push or pull request"] --> CI["GitHub Actions CI"]
-    CI --> DEPS["Pinned dependencies"]
-    DEPS --> QUALITY["Ruff + mypy"]
-    QUALITY --> TRAIN["Train and evaluate"]
-    TRAIN --> TEST["Pytest suite"]
-    TEST --> ARTIFACT{"Checks passed?"}
+    DATA["data/compute_capacity.csv"] --> VAL["Data validation"]
+    VAL --> SPLIT["Split 70/15/15 (seed 42)"]
 
-    ARTIFACT -->|"No"| STOP["Stop pipeline"]
-    ARTIFACT -->|"Yes"| BUILD["Build Docker image"]
-    BUILD --> SMOKE["Readiness and prediction smoke test"]
-    SMOKE --> UPLOAD["Upload model and metadata"]
+    subgraph Experiment["Training & model selection"]
+        SPLIT --> BASE["LinearRegression (baseline)"]
+        SPLIT --> CAND["XGBRegressor (candidate)"]
+        BASE --> CV["5-fold cross-validation"]
+        CAND --> CV
+        CV --> GATE{"RMSE improvement ≥ 1%"}
+        GATE -->|"Approved"| MODEL["Candidate model"]
+        GATE -->|"Rejected"| SELECT["LinearRegression baseline"]
+        MODEL --> ART["model/model.joblib + metadata"]
+        SELECT --> ART
+    end
 
-    UPLOAD --> ENABLED{"DEPLOY_ENABLED = true?"}
-    ENABLED -->|"No"| WAIT["Deployment disabled"]
-    ENABLED -->|"Yes"| OIDC["GitHub OIDC"]
-    OIDC --> ECR["Amazon ECR"]
-    ECR --> ECS["ECS Fargate"]
+    ART --> MLFLOW["MLflow tracking (optional)"]
+    ART --> CI["GitHub Actions CI"]
+    CI --> DOWNLOAD["Trained model artifact"]
+    DOWNLOAD --> DOCKER["Docker API image"]
+    DOCKER --> ECR["Amazon ECR"]
+    ECR --> ECS["Amazon ECS Fargate"]
 
-    classDef source fill:#DBEAFE,stroke:#2563EB,color:#1E3A5F
-    classDef check fill:#FEF3C7,stroke:#D97706,color:#78350F
-    classDef good fill:#DCFCE7,stroke:#16A34A,color:#14532D
-    classDef stop fill:#FEE2E2,stroke:#DC2626,color:#7F1D1D
-    classDef cloud fill:#E0F2FE,stroke:#0284C7,color:#0C4A6E
-
-    class PR,DEPS,TRAIN,TEST source
-    class ARTIFACT,ENABLED,QUALITY,SMOKE check
-    class BUILD,UPLOAD,WAIT good
-    class STOP stop
-    class OIDC,ECR,ECS cloud
+    USER["API consumer"] --> ECS
+    ECS --> API["FastAPI"]
+    API --> HEALTH["GET /health"]
+    API --> READY["GET /ready"]
+    API --> PREDICT["POST /predict"]
+    API --> METRICS["GET /metrics"]
+    API --> DRIFT["GET /drift"]
 ```
+
+### Key Components
+
+| Component | File | Role |
+|-----------|------|------|
+| Feature contract | `src/schema.py` | Ordered list of 6 features + Pydantic schema with bounds (single source of truth for anti-skew) |
+| Data loading & validation | `src/data/processing.py` | CSV reading (comma or semicolon separator), validation of missing values, numeric types, finite values, target in `[0, 1]` |
+| Deterministic split | `src/data/splitting.py` | 70% train / 15% validation / 15% test, `random_state=42` |
+| Evaluation & cross-validation | `src/models/evaluation.py` | RMSE, MAE, R²; 5-fold CV |
+| Model selection | `src/models/model_selection.py` | Gate: candidate replaces baseline if RMSE improves by at least 1% |
+| Drift detection | `src/models/drift.py` | Z-score vs reference statistics, threshold 3.0 |
+| Inference preparation | `src/models/inference.py` | Converts Pydantic model to numpy array, feature order guaranteed |
+| Serving API | `scripts/app.py` | FastAPI: `/health`, `/ready`, `/predict`, `/metrics`, `/drift` |
+| Training + MLflow | `scripts/train_with_mlflow.py` | Baseline vs candidate, gate, model save, manifest, optional MLflow logging |
+| Offline benchmark | `scripts/compute_baselines.py` | Comparison of DummyRegressor / LinearRegression / selected model |
+| SageMaker Pipeline | `scripts/create_pipeline.py` | SageMaker pipeline (SKLearn estimator) |
+| SageMaker Job | `scripts/run_training_job.py` | Standalone SageMaker training job |
+| SageMaker XGBoost | `scripts/run_train_deploy.py` | Training + endpoint deployment with built-in XGBoost |
 
 ---
 

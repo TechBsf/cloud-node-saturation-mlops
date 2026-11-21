@@ -28,31 +28,41 @@ Designed for reproducibility, train/serve anti-skew, and cloud-aware deployment 
 
 ```mermaid
 flowchart TD
-    CSV[("Synthetic telemetry CSV")] --> LOAD["Load and validate"]
-    LOAD --> CHECK{"Required features, types,\nmissing values and target range"}
-    CHECK -->|"Valid"| SPLIT["Deterministic split 70 / 15 / 15"]
-    CHECK -->|"Invalid"| FAIL["Stop training"]
+    subgraph Ingest["Data ingestion"]
+        CSV[("Synthetic telemetry CSV")] --> LOAD["Load CSV"]
+        LOAD --> CHECK{"Features,\nmissing values,\ntarget range"}
+    end
 
-    SPLIT --> TRAIN["Training data"]
-    SPLIT --> VALID["Validation data"]
-    SPLIT --> TEST["Held-out test data"]
+    subgraph Split["Split 70 / 15 / 15 (seed 42)"]
+        CHECK -->|"Valid"| SPLIT["Deterministic split"]
+        CHECK -->|"Invalid"| FAIL["Stop training"]
+        SPLIT --> TRAIN["Train set\n70%"]
+        SPLIT --> VALID["Validation set\n15%"]
+        SPLIT --> TEST["Test set\n15%"]
+    end
 
-    TRAIN --> LINEAR["LinearRegression baseline"]
-    TRAIN --> XGB["XGBRegressor candidate"]
-    VALID --> LINEAR
-    VALID --> XGB
+    subgraph TrainEval["Training & evaluation"]
+        TRAIN --> BASE["LinearRegression\nbaseline"]
+        TRAIN --> CAND["XGBRegressor\ncandidate"]
+        VALID --> BASE
+        VALID --> CAND
+        BASE --> CV["5-fold cross-validation"]
+        CAND --> CV
+    end
 
-    LINEAR --> CV["5-fold cross-validation"]
-    XGB --> CV
-    CV --> GATE{"Candidate CV RMSE\nimprovement >= 1%"}
-    GATE -->|"Yes"| SELECT_XGB["Promote XGBRegressor"]
-    GATE -->|"No"| SELECT_LINEAR["Retain LinearRegression"]
+    subgraph Gate["Model promotion gate (RMSE ≥ 1%)"]
+        CV --> GATE{"CV RMSE\nimprovement ≥ 1%?"}
+        GATE -->|"Yes"| PROMOTE["Promote\nXGBRegressor"]
+        GATE -->|"No"| KEEP["Keep\nLinearRegression"]
+    end
 
-    TEST --> FINAL["Final test metrics"]
-    SELECT_LINEAR --> FINAL
-    SELECT_XGB --> FINAL
-    FINAL --> ARTIFACT["joblib artifact + model_metadata.json"]
-    ARTIFACT --> MLFLOW["MLflow runs"]
+    subgraph Output["Artifacts"]
+        TEST --> METRICS["Final test\nmetrics"]
+        PROMOTE --> METRICS
+        KEEP --> METRICS
+        METRICS --> ARTIFACT["model.joblib +\nmodel_metadata.json"]
+        ARTIFACT --> MLFLOW["MLflow run\nlogged"]
+    end
 
     classDef data fill:#DBEAFE,stroke:#2563EB,color:#1E3A5F
     classDef process fill:#DCFCE7,stroke:#16A34A,color:#14532D
@@ -61,9 +71,9 @@ flowchart TD
     classDef error fill:#FEE2E2,stroke:#DC2626,color:#7F1D1D
 
     class CSV,TRAIN,VALID,TEST data
-    class LOAD,SPLIT,LINEAR,XGB,CV,FINAL,MLFLOW process
+    class LOAD,SPLIT,BASE,CAND,CV,METRICS,MLFLOW process
     class CHECK,GATE decision
-    class ARTIFACT,SELECT_LINEAR,SELECT_XGB output
+    class ARTIFACT,PROMOTE,KEEP output
     class FAIL error
 ```
 
@@ -72,25 +82,26 @@ flowchart TD
 ```mermaid
 sequenceDiagram
     autonumber
-    participant C as API client
-    participant A as FastAPI
-    participant V as Pydantic contract
-    participant F as Feature formatter
-    participant M as Selected model
-    participant O as Metrics and drift
-    C->>A: POST /predict
-    A->>V: Validate fields and bounds
+    participant Client as API Client
+    participant API as FastAPI
+    participant Contract as Pydantic Contract
+    participant Formatter as Feature Formatter
+    participant Model as Selected Model
+    participant Observability as Metrics & Drift
+
+    Client->>API: POST /predict
+    API->>Contract: Validate fields & bounds
     alt Invalid request
-        V-->>A: Validation error
-        A-->>C: HTTP 422
+        Contract-->>API: Validation error
+        API-->>Client: HTTP 422
     else Valid request
-        V->>F: Convert telemetry
-        F->>F: Canonical six-feature order
-        F->>M: Predict from one row
-        M-->>A: Raw saturation score
-        A->>A: Clip score to [0, 1]
-        A->>O: Update latency, metrics and drift
-        A-->>C: HTTP 200 + score
+        Contract->>Formatter: Convert telemetry
+        Formatter->>Formatter: Canonical 6-feature order
+        Formatter->>Model: Predict (1 row)
+        Model-->>API: Raw saturation score
+        API->>API: Clip score to [0, 1]
+        API->>Observability: Update metrics & drift
+        API-->>Client: HTTP 200 + score
     end
 ```
 
@@ -98,23 +109,29 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    PR["Push or pull request"] --> CI["GitHub Actions CI"]
-    CI --> DEPS["Pinned dependencies"]
-    DEPS --> QUALITY["Ruff + mypy"]
-    QUALITY --> TRAIN["Train and evaluate"]
-    TRAIN --> TEST["Pytest suite"]
-    TEST --> ARTIFACT{"Checks passed?"}
+    %% CI Pipeline
+    subgraph CI["GitHub Actions CI"]
+        PR["Push / Pull Request"] --> DEPS["Install pinned\ndependencies"]
+        DEPS --> QUALITY["Ruff + mypy\nquality gates"]
+        QUALITY --> TRAIN["Train & evaluate\nmodel"]
+        TRAIN --> TEST["Pytest suite\n29 tests"]
+        TEST --> GATE{"All checks\npassed?"}
+    end
 
-    ARTIFACT -->|"No"| STOP["Stop pipeline"]
-    ARTIFACT -->|"Yes"| BUILD["Build Docker image"]
-    BUILD --> SMOKE["Readiness and prediction smoke test"]
-    SMOKE --> UPLOAD["Upload model and metadata"]
+    %% Gate
+    GATE -->|"No"| STOP["Pipeline stopped"]
+    GATE -->|"Yes"| CI_BUILD["Build Docker image"]
+    CI_BUILD --> CI_SMOKE["Smoke test:\n/ready + /predict"]
+    CI_SMOKE --> CI_UPLOAD["Upload model\nartifact"]
 
-    UPLOAD --> ENABLED{"DEPLOY_ENABLED = true?"}
-    ENABLED -->|"No"| WAIT["Deployment disabled"]
-    ENABLED -->|"Yes"| OIDC["GitHub OIDC"]
-    OIDC --> ECR["Amazon ECR"]
-    ECR --> ECS["ECS Fargate"]
+    %% CD Deployment
+    subgraph CD["Deployment (ECS Fargate)"]
+        CI_UPLOAD --> ENABLED{"DEPLOY_ENABLED\n= true?"}
+        ENABLED -->|"No"| DISABLED["Deployment\ndisabled"]
+        ENABLED -->|"Yes"| OIDC["GitHub OIDC\ncredentials"]
+        OIDC --> ECR["Build & push to\nAmazon ECR"]
+        ECR --> ECS["Deploy to\nECS Fargate"]
+    end
 
     classDef source fill:#DBEAFE,stroke:#2563EB,color:#1E3A5F
     classDef check fill:#FEF3C7,stroke:#D97706,color:#78350F
@@ -122,11 +139,11 @@ flowchart LR
     classDef stop fill:#FEE2E2,stroke:#DC2626,color:#7F1D1D
     classDef cloud fill:#E0F2FE,stroke:#0284C7,color:#0C4A6E
 
-    class PR,DEPS,TRAIN,TEST source
-    class ARTIFACT,ENABLED,QUALITY,SMOKE check
-    class BUILD,UPLOAD,WAIT good
+    class PR,DEPS,QUALITY,TRAIN,TEST source
+    class GATE,CI_BUILD,CI_SMOKE,CI_UPLOAD,ENABLED check
     class STOP stop
     class OIDC,ECR,ECS cloud
+    class DISABLED stop
 ```
 
 ---

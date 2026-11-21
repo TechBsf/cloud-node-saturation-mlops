@@ -11,3 +11,5 @@ mlflow.db
 .mypy_cache/
 .ruff_cache/
 model/*.joblib
+*.log
+*.err

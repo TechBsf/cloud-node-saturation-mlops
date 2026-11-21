@@ -28,41 +28,26 @@ Designed for reproducibility, train/serve anti-skew, and cloud-aware deployment 
 
 ```mermaid
 flowchart TD
-    subgraph Ingest["Data ingestion"]
-        CSV[("Synthetic telemetry CSV")] --> LOAD["Load CSV"]
-        LOAD --> CHECK{"Features,\nmissing values,\ntarget range"}
+    subgraph Data["Data"]
+        CSV[("Synthetic CSV")] --> VALIDATE["Validate"]
+        VALIDATE -->|Valid| SPLIT["Split 70/15/15\nseed 42"]
+        VALIDATE -->|Invalid| STOP["Stop"]
     end
 
-    subgraph Split["Split 70 / 15 / 15 (seed 42)"]
-        CHECK -->|"Valid"| SPLIT["Deterministic split"]
-        CHECK -->|"Invalid"| FAIL["Stop training"]
-        SPLIT --> TRAIN["Train set\n70%"]
-        SPLIT --> VALID["Validation set\n15%"]
-        SPLIT --> TEST["Test set\n15%"]
+    subgraph Train["Training & gate"]
+    SPLIT --> TRAIN["Train 70%"]
+    SPLIT --> VAL["Validation 15%"]
+    SPLIT --> TEST["Test 15%"]
+    TRAIN & VAL --> MODELS["LinearRegression\nvs XGBRegressor"]
+    MODELS --> CV["5-fold CV"]
+    CV --> GATE{"RMSE\nimprovement ≥ 1%?"}
+    GATE -->|Yes| XGB["XGBRegressor"]
+    GATE -->|No| LINEAR["LinearRegression"]
     end
 
-    subgraph TrainEval["Training & evaluation"]
-        TRAIN --> BASE["LinearRegression\nbaseline"]
-        TRAIN --> CAND["XGBRegressor\ncandidate"]
-        VALID --> BASE
-        VALID --> CAND
-        BASE --> CV["5-fold cross-validation"]
-        CAND --> CV
-    end
-
-    subgraph Gate["Model promotion gate (RMSE ≥ 1%)"]
-        CV --> GATE{"CV RMSE\nimprovement ≥ 1%?"}
-        GATE -->|"Yes"| PROMOTE["Promote\nXGBRegressor"]
-        GATE -->|"No"| KEEP["Keep\nLinearRegression"]
-    end
-
-    subgraph Output["Artifacts"]
-        TEST --> METRICS["Final test\nmetrics"]
-        PROMOTE --> METRICS
-        KEEP --> METRICS
-        METRICS --> ARTIFACT["model.joblib +\nmodel_metadata.json"]
-        ARTIFACT --> MLFLOW["MLflow run\nlogged"]
-    end
+    XGB & LINEAR --> METRICS["Test metrics"]
+    METRICS --> ARTIFACT["model.joblib\n+ metadata"]
+    ARTIFACT --> MLFLOW["MLflow run"]
 
     classDef data fill:#DBEAFE,stroke:#2563EB,color:#1E3A5F
     classDef process fill:#DCFCE7,stroke:#16A34A,color:#14532D
@@ -70,11 +55,11 @@ flowchart TD
     classDef output fill:#F3E8FF,stroke:#9333EA,color:#581C87
     classDef error fill:#FEE2E2,stroke:#DC2626,color:#7F1D1D
 
-    class CSV,TRAIN,VALID,TEST data
-    class LOAD,SPLIT,BASE,CAND,CV,METRICS,MLFLOW process
-    class CHECK,GATE decision
-    class ARTIFACT,PROMOTE,KEEP output
-    class FAIL error
+    class CSV,SPLIT,TRAIN,VAL,TEST data
+    class VALIDATE,MODELS,CV,METRICS,MLFLOW process
+    class GATE decision
+    class XGB,LINEAR,ARTIFACT output
+    class STOP error
 ```
 
 ### 2. Real-time inference

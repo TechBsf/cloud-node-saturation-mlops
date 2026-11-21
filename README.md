@@ -1,8 +1,23 @@
 # Cloud Node Saturation MLOps
 
-End-to-end MLOps pipeline for predicting cloud node saturation (`saturation_risk_score`) from infrastructure telemetry (`cpu_utilization_pct`, `memory_utilization_pct`, `request_rate_rps`, `p99_latency_ms`, `queue_depth`, `uptime_hours`).
+[![MLOps CI](https://github.com/TechBsf/cloud-node-saturation-mlops/actions/workflows/ci.yml/badge.svg)](https://github.com/TechBsf/cloud-node-saturation-mlops/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-SageMaker%20%7C%20ECS-232F3E?logo=amazonaws&logoColor=white)
 
-![ML & MLOps Architecture](docs/mlops_architecture.svg)
+An end-to-end MLOps project that predicts the saturation-risk score of a cloud
+compute node from CPU, memory, request-rate, latency, queue-depth and uptime
+telemetry.
+
+**Current result:** `LinearRegression` is the selected model. XGBoost improves
+the hold-out RMSE slightly, but it does not improve the 5-fold
+cross-validation comparison strongly enough to replace the baseline. The
+selected model reaches `RMSE 0.0304`,
+`MAE 0.0236` and `R2 0.8737` on the test set.
+
+> This is a portfolio/MLOps demonstration using a synthetic 1,500-row dataset.
+> AWS deployment scripts and GitHub Actions CD are configured, but no AWS
+> production deployment has been executed locally.
 
 ---
 
@@ -10,200 +25,299 @@ End-to-end MLOps pipeline for predicting cloud node saturation (`saturation_risk
 
 ```mermaid
 flowchart LR
-    DATA["compute_capacity.csv"] --> VAL["Data validation"]
-    VAL --> SPLIT["Train 70% / Validation 15% / Test 15%"]
+    DATA["Telemetry CSV"] --> VALIDATE["Data validation"]
+    VALIDATE --> SPLIT["70% train / 15% validation / 15% test"]
 
-    subgraph Experiment["Training & model selection"]
-        SPLIT --> BASE["LinearRegression"]
-        SPLIT --> CAND["XGBRegressor"]
-        BASE --> CV["5-fold cross-validation"]
-        CAND --> CV
-        CV --> GATE{"RMSE improvement at least 1%"}
-        GATE -->|"Approved"| MODEL["Candidate model"]
-        GATE -->|"Rejected"| SELECT["LinearRegression"]
-        MODEL --> ART["Model joblib + metadata"]
-        SELECT --> ART
+    subgraph Selection["Training and model selection"]
+        SPLIT --> LINEAR["LinearRegression"]
+        SPLIT --> XGB["XGBRegressor"]
+        LINEAR --> CV["5-fold cross-validation"]
+        XGB --> CV
+        CV --> GATE{"Candidate RMSE improvement >= 1%"}
+        GATE -->|"Rejected"| BASELINE["Select LinearRegression"]
+        GATE -->|"Approved"| CANDIDATE["Select XGBRegressor"]
     end
 
-    ART --> MLFLOW["MLflow tracking"]
-    ART --> CI["GitHub Actions CI"]
-    CI --> DOWNLOAD["Trained model artifact"]
-    DOWNLOAD --> DOCKER["Docker API image"]
+    BASELINE --> ARTIFACT["joblib model + metadata"]
+    CANDIDATE --> ARTIFACT
+    ARTIFACT --> MLFLOW["MLflow tracking"]
+    ARTIFACT --> CI["GitHub Actions CI"]
+    CI --> MODELART["GitHub model artifact"]
+    MODELART --> DOCKER["Docker image"]
     DOCKER --> ECR["Amazon ECR"]
-    ECR --> ECS["Amazon ECS Fargate"]
+    ECR --> ECS["ECS Fargate"]
 
-    USER["API consumer"] --> ECS
-    ECS --> API["FastAPI"]
-    API --> HEALTH["health liveness"]
-    API --> READY["ready readiness"]
-    API --> PREDICT["predict inference"]
-    API --> METRICS["metrics telemetry"]
-    API --> DRIFT["drift feature drift"]
+    CLIENT["API client"] --> ECS
+    ECS --> API["FastAPI service"]
+    API --> HEALTH["/health"]
+    API --> READY["/ready"]
+    API --> PREDICT["/predict"]
+    API --> METRICS["/metrics"]
+    API --> DRIFT["/drift"]
 
-    SAGEMAKER["Amazon SageMaker"] -.->|"optional training/deployment"| ART
-    S3["Amazon S3"] -.->|"datasets and artifacts"| SAGEMAKER
+    SAGEMAKER["Amazon SageMaker"] -.->|"optional alternative"| ARTIFACT
+    S3["Amazon S3"] -.->|"data and artifacts"| SAGEMAKER
 ```
 
-### Implementation map
+---
 
-- Data validation and split: [`src/data/processing.py`](src/data/processing.py), [`src/data/splitting.py`](src/data/splitting.py)
-- Model training and gate: [`scripts/train_with_mlflow.py`](scripts/train_with_mlflow.py)
-- Feature contract: [`src/schema.py`](src/schema.py)
-- Serving API: [`scripts/app.py`](scripts/app.py)
-- CI and artifact transfer: [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
-- ECS deployment: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)
-- SageMaker scripts: [`scripts/create_pipeline.py`](scripts/create_pipeline.py), [`scripts/run_training_job.py`](scripts/run_training_job.py)
+## What This Project Demonstrates
+
+- **Data contracts:** one canonical feature order shared between training and inference.
+- **Data validation:** missing values, non-numeric values, infinite values and
+  out-of-range targets fail before training.
+- **Reproducible evaluation:** deterministic `70/15/15` split, seed `42`,
+  5-fold cross-validation and a held-out test set.
+- **Model promotion:** cross-validation metrics decide whether XGBoost replaces
+  the linear baseline.
+- **Artifact traceability:** the model manifest records the dataset hash, split,
+  selected model, reference statistics and test metrics.
+- **Serving:** FastAPI exposes liveness, readiness, prediction, operational
+  metrics and a lightweight rolling drift report.
+- **Delivery:** GitHub Actions runs tests and builds Docker; the trained artifact
+  is transferred to the ECS deployment workflow.
+- **Cloud portability:** SageMaker training and deployment alternatives are
+  included, while ECS is disabled by default.
 
 ---
 
-## Key Highlights
+## Model and Evaluation
 
-- **Reproducible Training & Tracking**: baseline (`LinearRegression`) vs candidate (`XGBRegressor`) benchmarked with **MLflow** (`scripts/train_with_mlflow.py`), logging parameters, metrics (`RMSE`, `MAE`, `R²`) and model metadata.
-- **Data & Inference Validation**: schema and dimension validation (`src/schema.py` and `scripts/app.py`) before training and serving. Feature order is defined once in `src/schema.py` and reused everywhere to avoid train/serve skew.
-- **Serving API**: real-time inference API built with **FastAPI** (`scripts/app.py`) exposing health, readiness, metrics, drift and prediction endpoints.
-- **Automated Quality Gates**: unit/contract/model-gate tests via **pytest** (`tests/`) plus lint (`ruff`), type-checking (`mypy`), training, and a **container smoke test** in CI (`.github/workflows/ci.yml`).
-- **Cloud-Aware Deployment Design**: SageMaker training scripts (`run_training_job.py`, `create_pipeline.py`, `run_train_deploy.py`) plus an ECS Fargate CD workflow (`deploy.yml`) guarded by `DEPLOY_ENABLED` and GitHub OIDC, to handle organizational **AWS SCP** restrictions on **ECR** and **ECS Fargate**.
-- **Deterministic Splits**: training, validation and test use the shared 70/15/15 helper with seed `42`; all benchmark scripts evaluate the same test split.
-- **Model Promotion Gate**: only a candidate at least 1% better in validation RMSE replaces the linear baseline in `model/model.joblib`.
-- **Training Data Validation**: missing values, non-numeric columns, infinite values and target values outside `[0,1]` fail before model training.
-- **Model Manifest**: `model/model_metadata.json` records selected model, dataset hash, reference statistics, split, gate and test metrics.
-
----
-
-## Model Results
-
-The project trains a `LinearRegression` baseline and an `XGBRegressor` candidate on the same deterministic
-70/15/15 split. A 5-fold cross-validation gate compares the mean validation RMSE.
+The test set is held out from training and from the candidate-selection gate.
+The final test metrics below describe the model selected by cross-validation.
 
 | Model | Hold-out validation RMSE | Hold-out validation R² | Test RMSE | Test R² |
 |---|---:|---:|---:|---:|
 | LinearRegression | 0.0291 | 0.8968 | 0.0304 | 0.8737 |
-| XGBRegressor | 0.0290 | 0.8976 | Not selected | Not selected |
+| XGBRegressor | 0.0290 | 0.8976 | — | — |
 
-**Selected model:** `LinearRegression`
+The 5-fold gate uses cross-validation on train plus validation data:
 
-The candidate improved the validation RMSE by less than the required 1%, so the promotion gate rejected it.
-The linear model is simpler, more stable and was retained in `model/model.joblib`.
+| Model | Mean CV RMSE |
+|---|---:|
+| LinearRegression | 0.029277 |
+| XGBRegressor | 0.030894 |
 
-In the 5-fold gate, the linear baseline achieved mean RMSE `0.029277` and XGBoost
-`0.030894`; the candidate also failed the cross-validation promotion criterion.
+XGBoost does not improve cross-validation RMSE by at least `1%`, so the
+promotion gate rejects it and deployable artifacts contain
+`LinearRegression`.
+
+At final local validation, the complete pytest suite had `29 passed` tests.
+
+The machine-readable outcome is stored in
+[`model/model_metadata.json`](model/model_metadata.json).
+
+---
+
+## API
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `GET` | `/health` | Process liveness |
+| `GET` | `/ready` | Model readiness |
+| `GET` | `/metrics` | Prediction count, errors and latency |
+| `GET` | `/drift` | Rolling Z-score report by feature |
+| `POST` | `/predict` | Saturation-risk inference |
+
+### Predict with a telemetry object
+
+```bash
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "cpu_utilization_pct": 57.48,
+    "memory_utilization_pct": 48.94,
+    "request_rate_rps": 200.15,
+    "p99_latency_ms": 32.16,
+    "queue_depth": 4,
+    "uptime_hours": 1602
+  }'
+```
+
+The response is bounded to the contract range:
+
+```json
+{"saturation_risk_score": 0.35}
+```
+
+The API also accepts a `{"features": [...]}` vector when the canonical six
+feature values are supplied in the order documented by
+[`src/schema.py`](src/schema.py).
 
 ---
 
 ## Repository Structure
 
 ```text
-.
-├── .github/
-│   └── workflows/             # GitHub Actions CI & CD
-├── docs/                      # Architecture diagrams
-├── iam/                       # IAM trust & PassRole policies
-├── scripts/
-│   ├── app.py                 # FastAPI inference API (/health, /predict)
-│   ├── train_with_mlflow.py   # Baseline vs XGBoost + MLflow tracking
-│   ├── compute_baselines.py   # Offline benchmark table
-│   ├── run_training_job.py    # SageMaker training job (SKLearn)
-│   ├── create_pipeline.py     # SageMaker pipeline
-│   └── run_train_deploy.py    # SageMaker built-in XGBoost train + deploy
-├── src/
-│   ├── schema.py              # Feature/TARGET contract + Pydantic model
-│   ├── data/                  # CSV loading, validation and splitting
-│   └── models/                # evaluation, inference, gates and drift
-├── tests/                     # Pytest suite
-├── data/                      # compute_capacity.csv
-├── model/                     # trained model (not committed; train first)
-├── Dockerfile                 # API image
-├── requirements.txt           # runtime deps only
-├── pyproject.toml             # packaging, deps, lint/type config
-├── Makefile                   # common dev tasks
-└── README.md
+.github/workflows/       CI and ECS/CD workflows
+src/
+  data/                  CSV loading, validation and deterministic splits
+  models/                Metrics, model gate, inference and drift monitoring
+  schema.py              Canonical feature and target contract
+scripts/
+  app.py                 FastAPI application
+  train_with_mlflow.py   Baseline/candidate training and model selection
+  run_training_job.py    SageMaker SKLearn training job
+  create_pipeline.py     SageMaker pipeline
+  run_train_deploy.py    Built-in SageMaker XGBoost example
+tests/                   Unit, contract, model and API tests
+data/                    Synthetic telemetry dataset
+model/                   Generated model and metadata; model binary is not committed
+iam/                     SageMaker role and trust policy examples
+docs/                    Architecture documentation
+Dockerfile               API container
+pyproject.toml           Package metadata and tool configuration
 ```
 
 ---
 
 ## Quickstart
 
-### 1. Setup
+### 1. Create an environment
 
 ```bash
 python -m venv .venv
-# Windows : .venv\Scripts\activate    # macOS/Linux : source .venv/bin/activate
+
+# Windows
+.venv\Scripts\activate
+
+# macOS/Linux
+# source .venv/bin/activate
+
+python -m pip install --upgrade pip
 pip install -e ".[dev]"
 ```
 
-### 2. Train
+### 2. Train and select the model
 
 ```bash
 python scripts/train_with_mlflow.py
 ```
 
-This benchmarks `LinearRegression` against `XGBRegressor` on `data/compute_capacity.csv`,
-writes the promoted model to `model/model.joblib`, and records its metadata.
-Optionally enable MLflow tracking:
+This creates `model/model.joblib` and `model/model_metadata.json`.
+
+Optional MLflow server/tracking URI:
 
 ```bash
-export MLFLOW_TRACKING_URI=file:///path/to/mlruns   # or your tracking server
-python scripts/train_with_mlflow.py
+# Windows PowerShell
+$env:MLFLOW_TRACKING_URI="file:///C:/path/to/mlruns"
+
+# macOS/Linux
+# export MLFLOW_TRACKING_URI=file:///path/to/mlruns
 ```
 
-### 3. Serve
+The application does not load `.env` files automatically. Export AWS variables
+for the SageMaker scripts or configure them in GitHub Actions/Secrets.
+
+### 3. Run the API
 
 ```bash
 uvicorn scripts.app:app --host 0.0.0.0 --port 8000
 ```
 
-- `GET  /health` → `{"status": "ok"}`
-- `POST /predict` with either a full telemetry object or a `{"features": [...]}` vector.
-- `GET  /ready` → readiness status; returns `503` until the model is loaded.
-- `GET  /metrics` → prediction count, error count, last score and average latency.
-- `GET  /drift` → rolling feature drift report; becomes active after 30 predictions.
+Open `http://localhost:8000/docs` for the interactive OpenAPI interface.
 
-`/health` is a liveness endpoint: it confirms that the process responds. `/ready` is a readiness endpoint:
-it confirms that the model was loaded successfully.
-
-### 4. Test, lint, type-check
+### 4. Test and validate
 
 ```bash
 pytest -v
 ruff check .
-mypy .
+mypy src
 ```
 
-Or use the Makefile targets: `make install`, `make train`, `make test`, `make lint`, `make typecheck`, `make api`.
-
-### 5. Docker
+The Docker smoke test is equivalent to:
 
 ```bash
 docker build -t cloud-node-saturation-mlops .
-docker run -p 8000:8000 cloud-node-saturation-mlops
+docker run --rm -p 8000:8000 cloud-node-saturation-mlops
+curl -f http://localhost:8000/ready
 ```
-
-> The model must exist locally (`make train`) before building, since `model/model.joblib` is not committed.
-
-### 6. Deploy (SageMaker / ECS)
-
-SageMaker scripts read configuration from the environment (`AWS_REGION`, `S3_BUCKET`, `SAGEMAKER_ROLE_ARN`); copy `.env.example` to `.env` and fill in your values.
-
-The ECS CD workflow is off by default. To enable it, set these repository variables/secret:
-
-- `DEPLOY_ENABLED=true`
-- `DEPLOY_ROLE_ARN` (the OIDC role ARN used by `deploy.yml`)
 
 ---
 
-## Known constraints
+## CI/CD
 
-- The target AWS account restricts **Amazon ECR** and **ECS Fargate** via SCP; the ECS CD workflow stays disabled (`DEPLOY_ENABLED=false`) until that changes.
-- The dataset is a small synthetic CSV (1500 rows), so the metrics demonstrate the pipeline rather than production performance.
-- MLflow tracking is optional and may use local storage by default.
-- The ECS and SageMaker deployments require AWS infrastructure and credentials and were not executed locally.
-- Docker smoke testing could not be run locally until Docker Desktop/Linux containers are started.
-- Drift monitoring is currently in memory and keeps only the 1,000 most recent values; production monitoring should persist observations and use a dedicated system.
+The CI workflow:
+
+1. Checks out the repository.
+2. Installs locked direct package versions.
+3. Runs Ruff.
+4. Runs mypy on application source.
+5. Retrains and creates the model artifact.
+6. Runs pytest.
+7. Builds the Docker image.
+8. Performs an API readiness and prediction smoke test.
+
+The CD workflow is triggered after CI on `main` or manually. It is guarded
+by `DEPLOY_ENABLED=true`; credentials use GitHub OIDC with an external
+`DEPLOY_ROLE_ARN`.
+
+Required repository variable/secret:
+
+- `DEPLOY_ENABLED=true`
+- `DEPLOY_ROLE_ARN=arn:aws:iam::<account-id>:role/<deploy-role>`
+
+The ECS infrastructure is not created or validated by this repository. The
+workflow expects an existing cluster, service, task family and container name.
+
+---
 
 ## Technical Decisions
 
-- The dataset uses a deterministic `70/15/15` train/validation/test split with seed `42`, keeping the test set isolated.
-- Cross-validation is used to compare baseline and candidate models before promotion.
-- The linear model was selected because XGBoost did not achieve the 1% validation RMSE improvement required by the gate.
-- The feature contract in `src/schema.py` is shared by training and serving to reduce train/serve skew.
-- GitHub Actions transfers the trained artifact between CI and CD instead of rebuilding an unrelated model image.
+- `70/15/15` keeps a reproducible test set separate from model selection.
+- Random seed `42` makes splits and estimators repeatable.
+- Cross-validation prevents the selected model from depending on one validation
+  split alone.
+- The candidate must improve mean CV RMSE by at least `1%` to be promoted.
+- Pydantic validates API inputs; the schema also prevents train/serve feature skew.
+- The model binary is excluded from Git and transferred through the CI artifact
+  flow.
+- MLflow is optional, so training remains usable with or without an external
+  tracking server.
+- `/drift` is a demonstrative Z-score calculation, not a replacement for an
+  external monitoring and alerting platform.
+
+---
+
+## Known Limitations
+
+- The dataset is synthetic and small, so observed metrics demonstrate the
+  pipeline rather than real production performance.
+- Drift samples are held in memory and are limited to 1,000 observations per
+  process. They are reset after a restart.
+- MLflow is optional and may use local storage unless a tracking server is configured.
+- Docker Desktop was unavailable during local validation.
+- AWS resources and credentials were not provisioned or deployed during local development.
+- The ECS workflow is disabled unless the target AWS account and SCP allow ECR/ECS.
+- No external monitoring alert, DVC data registry or persistent model registry is configured.
+
+---
+
+## Future Improvements
+
+- Version datasets and use a remote MLflow model registry.
+- Add Evidently or SageMaker Model Monitor for production drift.
+- Persist metrics and drift observations to CloudWatch or another database.
+- Add Docker image vulnerability scanning and signed artifacts.
+- Add API authentication and request throttling.
+- Protect `main`, require pull-request review and require CI success before merge.
+- Add DVC, Dependabot and `.gitattributes`.
+- Expand test coverage across Python 3.10 and 3.12.
+
+---
+
+## Interview Summary
+
+I built an end-to-end MLOps pipeline that validates telemetry data, compares a
+linear baseline against XGBoost, uses cross-validation and a promotion gate,
+records artifact metadata and serves the selected model through FastAPI. On this
+synthetic dataset, the linear model was retained because XGBoost did not improve
+cross-validation RMSE enough to justify the additional complexity.
+
+The main engineering decisions were:
+
+- sharing the feature contract across training and serving;
+- keeping test data outside model selection;
+- rejecting a worse candidate instead of always deploying the complex model;
+- transferring the exact trained artifact between CI and CD;
+- separating liveness, readiness, metrics and drift at the API level.

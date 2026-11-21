@@ -10,38 +10,38 @@ End-to-end MLOps pipeline for predicting cloud node saturation (`saturation_risk
 
 ```mermaid
 flowchart LR
-    DATA[compute_capacity.csv] --> VAL[Data validation]
-    VAL --> SPLIT[Train 70% / Validation 15% / Test 15%]
+    DATA["compute_capacity.csv"] --> VAL["Data validation"]
+    VAL --> SPLIT["Train 70% / Validation 15% / Test 15%"]
 
-    subgraph Experiment[Training & model selection]
-        SPLIT --> BASE[LinearRegression]
-        SPLIT --> CAND[XGBRegressor]
-        BASE --> CV[5-fold cross-validation]
+    subgraph Experiment["Training & model selection"]
+        SPLIT --> BASE["LinearRegression"]
+        SPLIT --> CAND["XGBRegressor"]
+        BASE --> CV["5-fold cross-validation"]
         CAND --> CV
-        CV --> GATE{RMSE improvement >= 1%}
-        GATE -->|Approved| MODEL[Candidate model]
-        GATE -->|Rejected| SELECT[LinearRegression]
-        MODEL --> ART[Model joblib + metadata]
+        CV --> GATE{"RMSE improvement at least 1%"}
+        GATE -->|"Approved"| MODEL["Candidate model"]
+        GATE -->|"Rejected"| SELECT["LinearRegression"]
+        MODEL --> ART["Model joblib + metadata"]
         SELECT --> ART
     end
 
-    ART --> MLFLOW[MLflow tracking]
-    ART --> CI[GitHub Actions CI]
-    CI --> DOWNLOAD[Trained model artifact]
-    DOWNLOAD --> DOCKER[Docker API image]
-    DOCKER --> ECR[Amazon ECR]
-    ECR --> ECS[Amazon ECS Fargate]
+    ART --> MLFLOW["MLflow tracking"]
+    ART --> CI["GitHub Actions CI"]
+    CI --> DOWNLOAD["Trained model artifact"]
+    DOWNLOAD --> DOCKER["Docker API image"]
+    DOCKER --> ECR["Amazon ECR"]
+    ECR --> ECS["Amazon ECS Fargate"]
 
-    USER[API consumer] --> ECS
-    ECS --> API[FastAPI]
-    API --> HEALTH[/health liveness]
-    API --> READY[/ready readiness]
-    API --> PREDICT[/predict inference]
-    API --> METRICS[/metrics telemetry]
-    API --> DRIFT[/drift feature drift]
+    USER["API consumer"] --> ECS
+    ECS --> API["FastAPI"]
+    API --> HEALTH["health liveness"]
+    API --> READY["ready readiness"]
+    API --> PREDICT["predict inference"]
+    API --> METRICS["metrics telemetry"]
+    API --> DRIFT["drift feature drift"]
 
-    SAGEMAKER[Amazon SageMaker] -. optional training/deployment .-> ART
-    S3[Amazon S3] -. datasets and artifacts .-> SAGEMAKER
+    SAGEMAKER["Amazon SageMaker"] -.->|"optional training/deployment"| ART
+    S3["Amazon S3"] -.->|"datasets and artifacts"| SAGEMAKER
 ```
 
 The repository provides an architecture SVG below for a detailed visual view. The Mermaid diagram is

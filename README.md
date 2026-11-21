@@ -90,12 +90,12 @@ sequenceDiagram
     end
 ```
 
-### 3. CI and deployment
+### 3. CI/CD
 
 ```mermaid
 flowchart LR
-    %% CI Pipeline
-    subgraph CI["GitHub Actions CI"]
+    %% CI/CD Pipeline
+    subgraph CI["GitHub Actions CI/CD"]
         PR["Push / Pull Request"] --> DEPS["Install pinned\ndependencies"]
         DEPS --> QUALITY["Ruff + mypy\nquality gates"]
         QUALITY --> TRAIN["Train & evaluate\nmodel"]

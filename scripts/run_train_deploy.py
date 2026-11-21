@@ -1,6 +1,8 @@
-﻿import os
+import os
 import time
+
 import boto3
+import pandas as pd
 import sagemaker
 from sagemaker.inputs import TrainingInput
 from sagemaker.xgboost.estimator import XGBoost
@@ -38,20 +40,16 @@ xgb.set_hyperparameters(
     max_depth=5,
     eta=0.2,
     subsample=0.8,
-    colsample_bytree=0.8
+    colsample_bytree=0.8,
 )
 
 # IMPORTANT: For built-in XGBoost CSV, SageMaker expects label as first column.
-# This dataset usually has quality as last column.
-# So we DO one tiny conversion step using a Processing job would be proper,
-# but you asked "minimum". We'll do a quick in-job conversion by creating a new S3 object.
-
+# This dataset usually has quality as last column, so we convert it first.
 s3 = boto3.client("s3", region_name=REGION)
 tmp_local = "/tmp/compute_capacity.csv"
 s3.download_file(BUCKET, "data/compute_capacity.csv", tmp_local)
 
 # Convert: move last column to first column
-import pandas as pd
 df = pd.read_csv(tmp_local)
 label_col = df.columns[-1]
 cols = [label_col] + [c for c in df.columns if c != label_col]
@@ -67,7 +65,7 @@ print(f"Converted dataset uploaded: {converted_s3}")
 
 train_input = TrainingInput(
     s3_data=converted_s3,
-    content_type="text/csv"
+    content_type="text/csv",
 )
 
 # Start training
@@ -78,9 +76,8 @@ predictor = xgb.deploy(
     initial_instance_count=1,
     instance_type="ml.m5.large",
     endpoint_name=ENDPOINT_NAME,
-    wait=True
+    wait=True,
 )
 
-print("SUCCESS ✅")
+print("SUCCESS")
 print(f"Endpoint InService: {ENDPOINT_NAME}")
-

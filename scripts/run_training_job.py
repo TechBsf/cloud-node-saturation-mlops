@@ -1,14 +1,14 @@
-﻿# scripts/run_training_job.py
+# scripts/run_training_job.py
 # Same estimator as create_pipeline.py, but launched as a plain training job
 # (no SageMaker Pipelines).
 
 import os
 import time
+
 import boto3
 import sagemaker
-
-from sagemaker.sklearn.estimator import SKLearn
 from sagemaker.inputs import TrainingInput
+from sagemaker.sklearn.estimator import SKLearn
 
 REGION = os.environ["AWS_REGION"]
 ROLE_ARN = os.environ["SAGEMAKER_ROLE_ARN"]
@@ -27,6 +27,7 @@ env = {"MLFLOW_TRACKING_URI": MLFLOW_URI} if MLFLOW_URI else {}
 estimator = SKLearn(
     entry_point="train_with_mlflow.py",
     source_dir="scripts",
+    dependencies=["src"],
     role=ROLE_ARN,
     instance_type="ml.m5.large",
     instance_count=1,
@@ -46,4 +47,3 @@ estimator.fit(
     wait=True,
 )
 print("Model artifacts:", estimator.model_data)
-

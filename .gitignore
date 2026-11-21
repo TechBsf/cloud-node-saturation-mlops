@@ -1,11 +1,13 @@
-﻿__pycache__/
+__pycache__/
 *.pyc
 .venv/
 venv/
 .env
 mlruns/
-
 mlartifacts/
 mlflow.db
 .pytest_cache/
 .coverage
+.mypy_cache/
+.ruff_cache/
+model/*.joblib

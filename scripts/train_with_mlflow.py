@@ -29,6 +29,7 @@ def try_mlflow_setup(uri: str) -> Any | None:
     try:
         import mlflow
         import mlflow.models
+        import mlflow.sklearn
         import mlflow.xgboost
 
         mlflow.set_tracking_uri(uri)
@@ -127,6 +128,10 @@ def main() -> None:
     }
     manifest_path = root_art.with_name("model_metadata.json")
     manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    # SageMaker : copier aussi le manifest dans SM_MODEL_DIR afin qu'il fasse
+    # partie des artefacts livrés (références de drift côté inférence).
+    if art.parent.resolve() != root_art.parent.resolve():
+        shutil.copy2(manifest_path, art.with_name("model_metadata.json"))
 
     mlflow = try_mlflow_setup(mlflow_uri)
     if mlflow is not None:
@@ -160,6 +165,29 @@ def main() -> None:
                 ),
                 input_example=x_validation.iloc[:1],
             )
+
+        with mlflow.start_run(run_name="selected_model_for_deployment"):
+            mlflow.log_param("selected_model", selected_model_name)
+            mlflow.log_param("dataset_sha256", dataset_hash)
+            mlflow.log_metrics({f"test_{k}": v for k, v in selected_test_metrics.items()})
+            signature = mlflow.models.infer_signature(
+                x_validation_array,
+                selected_model.predict(x_validation_array),
+            )
+            if isinstance(selected_model, xgb.XGBRegressor):
+                mlflow.xgboost.log_model(
+                    selected_model,
+                    name="model",
+                    signature=signature,
+                    input_example=x_validation.iloc[:1],
+                )
+            else:
+                mlflow.sklearn.log_model(
+                    selected_model,
+                    name="model",
+                    signature=signature,
+                    input_example=x_validation.iloc[:1],
+                )
 
     print(
         f"OK train_with_mlflow -> "

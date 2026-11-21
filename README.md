@@ -13,12 +13,10 @@ Designed for reproducibility, train/serve anti-skew, and cloud-aware deployment 
 | **Maturity** | Functional prototype (version 0.1.0), local training validated, unit tests passing |
 | **Dataset** | `data/compute_capacity.csv` — synthetic CSV with 1,500 rows (not committed; generated locally) |
 | **Selected model** | `LinearRegression` (XGBoost rejected by the gate: RMSE improvement < 1%) |
-| **Model artifacts** | `model/model.joblib` + `model/model_metadata.json` — **not committed**; must be trained before use |
+| **Model artifacts** | `model/model.joblib` (excluded by `.gitignore`) + `model/model_metadata.json` — generated locally; must be trained before use |
 | **Cloud deployment** | SageMaker scripts and ECS Fargate workflow present, **not executed locally** (require AWS credentials and existing infrastructure) |
 | **Known constraints** | ECR and ECS Fargate restricted by SCP on the target AWS account; CD workflow disabled by default (`DEPLOY_ENABLED=false`) |
 | **MLflow tracking** | Optional, local storage by default; no remote server configured |
-
----
 
 ---
 
@@ -194,7 +192,7 @@ XGBoost does not improve cross-validation RMSE by at least `1%`, so the
 promotion gate rejects it and deployable artifacts contain
 `LinearRegression`.
 
-At final local validation, the complete pytest suite had `29 passed` tests.
+The complete pytest suite has 29 passing tests.
 
 The machine-readable outcome is stored in
 [`model/model_metadata.json`](model/model_metadata.json).

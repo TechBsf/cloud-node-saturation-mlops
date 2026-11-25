@@ -2,6 +2,8 @@
 
 End-to-end MLOps pipeline for predicting cloud node saturation risk (`saturation_risk_score`) from infrastructure telemetry (CPU utilization, memory utilization, request rate, P99 latency, queue depth, uptime). The project compares a `LinearRegression` baseline against an `XGBRegressor` candidate, applies a model promotion gate (RMSE improvement ≥ 1%), and exposes a real-time inference API via FastAPI.
 
+[Live API](https://node-saturation-api-fp6clzw5ga-od.a.run.app/docs) · [Hugging Face demo](https://huggingface.co/spaces/TechBsf/cloud-node-saturation-mlops-demo) · [Model card](https://huggingface.co/TechBsf/cloud-node-saturation-mlops) · [CI status](https://github.com/TechBsf/cloud-node-saturation-mlops/actions)
+
 Designed for reproducibility, train/serve anti-skew, and cloud-aware deployment (SageMaker / ECS Fargate / Cloud Run).
 
 ---
@@ -11,7 +13,7 @@ Designed for reproducibility, train/serve anti-skew, and cloud-aware deployment 
 | Item | Detail |
 |------|--------|
 | **Maturity** | Functional prototype (version 0.1.0), local training validated, unit tests passing, public Cloud Run API |
-| **Dataset** | `data/compute_capacity.csv` — synthetic CSV with 1,500 rows (not committed; generated locally) |
+| **Dataset** | Synthetic CSV with 1,500 rows (not committed to GitHub; included in the Hugging Face model repository) |
 | **Selected model** | `LinearRegression` (XGBoost rejected by the gate: RMSE improvement < 1%) |
 | **Model artifacts** | `model/model.joblib` is excluded from Git, published in the Hugging Face model repository, and included in the Cloud Run container |
 | **Cloud deployment** | FastAPI is deployed publicly on Cloud Run (`europe-west9`, scales to zero, maximum one instance); the GCP deployment is manual |
@@ -258,6 +260,7 @@ remain available in the [Hugging Face model repository](https://huggingface.co/T
 ```text
 .github/workflows/       CI and gated AWS ECS deployment workflow
 hf_space_static/         Static Hugging Face model demo
+hf_model_card.md         Hugging Face model card source
 .gcloudignore            Cloud Run source upload exclusions
 src/
   data/                  CSV loading, validation and deterministic splits

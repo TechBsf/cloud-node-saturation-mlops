@@ -6,15 +6,22 @@ colorTo: green
 sdk: static
 app_file: index.html
 pinned: false
+license: mit
+tags:
+- mlops
+- regression
+- cloud-infrastructure
 ---
 
 # Cloud Node Saturation Risk Demo
 
-Try the trained `LinearRegression` model with sample cloud-node telemetry.
-Inference runs in this static page using the fitted model coefficients; no
-backend or account is required.
+Try sample cloud-node telemetry with a browser-side reproduction of the fitted
+`LinearRegression` model. The score is clipped to `[0, 1]`; it is not a
+calibrated probability. The model was trained on synthetic data, so this demo
+is for exploration, not real operational decisions.
 
-For a live FastAPI prediction endpoint, use the
+For real API inference, use the
 [interactive Cloud Run API docs](https://node-saturation-api-fp6clzw5ga-od.a.run.app/docs).
-The complete source code and model artifacts are in the
-[Hugging Face model repository](https://huggingface.co/TechBsf/cloud-node-saturation-mlops).
+The [model card and artifact](https://huggingface.co/TechBsf/cloud-node-saturation-mlops)
+and [GitHub source](https://github.com/TechBsf/cloud-node-saturation-mlops)
+describe how the project is trained, evaluated, and served.

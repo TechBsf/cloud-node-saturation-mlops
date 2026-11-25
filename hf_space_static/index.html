@@ -54,6 +54,18 @@
       }
       #score { color: #1d4ed8; font-size: 1.8rem; font-weight: 750; }
       .note { margin-bottom: 0; font-size: .88rem; }
+      .links { display: flex; flex-wrap: wrap; gap: 10px; }
+      .links a {
+        display: inline-block;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: #e8efff;
+        color: #1d4ed8;
+        font-weight: 650;
+        text-decoration: none;
+      }
+      .links a:hover { background: #dbeafe; }
+      .links a:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
       @media (max-width: 560px) {
         body { padding: 16px 10px; }
         main { padding: 22px 18px; }
@@ -64,8 +76,12 @@
   <body>
     <main>
       <h1>Cloud Node Saturation Risk</h1>
-      <p>Enter infrastructure telemetry to estimate the node's saturation risk. The trained model returns a score from 0 (low) to 1 (high).</p>
-      <p><a href="https://node-saturation-api-fp6clzw5ga-od.a.run.app/docs" target="_blank" rel="noopener noreferrer">Try the live FastAPI endpoint on Google Cloud Run</a></p>
+      <p>Enter infrastructure telemetry to estimate a node saturation score from 0 (lower) to 1 (higher).</p>
+      <p class="links">
+        <a href="https://node-saturation-api-fp6clzw5ga-od.a.run.app/docs" target="_blank" rel="noopener noreferrer">Try the live API</a>
+        <a href="https://huggingface.co/TechBsf/cloud-node-saturation-mlops" target="_blank" rel="noopener noreferrer">View model card</a>
+        <a href="https://github.com/TechBsf/cloud-node-saturation-mlops" target="_blank" rel="noopener noreferrer">View source</a>
+      </p>
       <form id="predict-form">
         <div class="grid">
           <label>CPU utilization (%)<input name="cpu_utilization_pct" type="number" min="0" max="100" step="any" value="57.48" required></label>
@@ -79,7 +95,7 @@
       </form>
       <section id="result" aria-live="polite">
         <div>Predicted risk score: <span id="score">0.3581</span></div>
-        <p class="note">This public demo runs the fitted LinearRegression calculation in your browser. The score is clipped to the model contract range [0, 1].</p>
+        <p class="note">This demo calculates in your browser; it does not call the live API. The score is clipped to [0, 1], is not a calibrated probability, and comes from a model trained on synthetic data.</p>
       </section>
     </main>
     <script>

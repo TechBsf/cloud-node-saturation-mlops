@@ -17,10 +17,10 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  AWS_REGION: eu-west-3
-  ECR_REPOSITORY: node-saturation-api
-  ECS_CLUSTER: node-sat-cluster
-  ECS_SERVICE: node-sat-service
+  AWS_REGION: eu-north-1
+  ECR_REPOSITORY: node-saturation
+  ECS_CLUSTER: wine-mlops-cluster
+  ECS_SERVICE: node-saturation-service
   TASK_FAMILY: node-saturation
   CONTAINER_NAME: api
 

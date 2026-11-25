@@ -2,7 +2,7 @@
 
 End-to-end MLOps pipeline for predicting cloud node saturation risk (`saturation_risk_score`) from infrastructure telemetry (CPU utilization, memory utilization, request rate, P99 latency, queue depth, uptime). The project compares a `LinearRegression` baseline against an `XGBRegressor` candidate, applies a model promotion gate (RMSE improvement ≥ 1%), and exposes a real-time inference API via FastAPI.
 
-Designed for reproducibility, train/serve anti-skew, and cloud-aware deployment (SageMaker / ECS Fargate).
+Designed for reproducibility, train/serve anti-skew, and cloud-aware deployment (SageMaker / ECS Fargate / Cloud Run).
 
 ---
 
@@ -10,12 +10,12 @@ Designed for reproducibility, train/serve anti-skew, and cloud-aware deployment 
 
 | Item | Detail |
 |------|--------|
-| **Maturity** | Functional prototype (version 0.1.0), local training validated, unit tests passing |
+| **Maturity** | Functional prototype (version 0.1.0), local training validated, unit tests passing, public Cloud Run API |
 | **Dataset** | `data/compute_capacity.csv` — synthetic CSV with 1,500 rows (not committed; generated locally) |
 | **Selected model** | `LinearRegression` (XGBoost rejected by the gate: RMSE improvement < 1%) |
-| **Model artifacts** | `model/model.joblib` (excluded by `.gitignore`) + `model/model_metadata.json` — generated locally; must be trained before use |
-| **Cloud deployment** | SageMaker scripts and ECS Fargate workflow present, **not executed locally** (require AWS credentials and existing infrastructure) |
-| **Known constraints** | ECR and ECS Fargate restricted by SCP on the target AWS account; CD workflow disabled by default (`DEPLOY_ENABLED=false`) |
+| **Model artifacts** | `model/model.joblib` is excluded from Git, published in the Hugging Face model repository, and included in the Cloud Run container |
+| **Cloud deployment** | FastAPI is deployed publicly on Cloud Run (`europe-west9`, scales to zero, maximum one instance); the GCP deployment is manual |
+| **Known constraints** | AWS ECR/ECS deployment is blocked by an organization SCP; the public GCP demo may incur usage-based charges beyond free quotas |
 | **MLflow tracking** | Optional, local storage by default; no remote server configured |
 
 ---
@@ -93,7 +93,7 @@ sequenceDiagram
 ```mermaid
 flowchart LR
     %% CI/CD Pipeline
-    subgraph CI["GitHub Actions CI/CD"]
+    subgraph CI["GitHub Actions CI"]
         PR["Push / Pull Request"] --> DEPS["Install pinned\ndependencies"]
         DEPS --> QUALITY["Ruff + mypy\nquality gates"]
         QUALITY --> TRAIN["Train & evaluate\nmodel"]
@@ -108,12 +108,13 @@ flowchart LR
     CI_SMOKE --> CI_UPLOAD["Upload model\nartifact"]
 
     %% CD Deployment
-    subgraph CD["Deployment (ECS Fargate)"]
+    subgraph CD["Cloud deployment"]
         CI_UPLOAD --> ENABLED{"DEPLOY_ENABLED\n= true?"}
-        ENABLED -->|"No"| DISABLED["Deployment\ndisabled"]
+        ENABLED -->|"No"| DISABLED["AWS deployment\ndisabled"]
         ENABLED -->|"Yes"| OIDC["GitHub OIDC\ncredentials"]
         OIDC --> ECR["Build & push to\nAmazon ECR"]
         ECR --> ECS["Deploy to\nECS Fargate"]
+        MANUAL["Manual gcloud run deploy\n--source ."] --> CLOUD_RUN["Cloud Run\nmin 0 / max 1"]
     end
 
     classDef source fill:#DBEAFE,stroke:#2563EB,color:#1E3A5F
@@ -125,7 +126,7 @@ flowchart LR
     class PR,DEPS,QUALITY,TRAIN,TEST source
     class GATE,CI_BUILD,CI_SMOKE,CI_UPLOAD,ENABLED check
     class STOP stop
-    class OIDC,ECR,ECS cloud
+    class OIDC,ECR,ECS,MANUAL,CLOUD_RUN cloud
     class DISABLED stop
 ```
 
@@ -164,10 +165,10 @@ flowchart LR
   selected model, reference statistics and test metrics.
 - **Serving:** FastAPI exposes liveness, readiness, prediction, operational
   metrics and a lightweight rolling drift report.
-- **Delivery:** GitHub Actions runs tests and builds Docker; the trained artifact
-  is transferred to the ECS deployment workflow.
+- **Delivery:** GitHub Actions runs CI and builds Docker. The AWS ECS workflow is
+  gated and disabled; the public Cloud Run service was deployed manually.
 - **Cloud portability:** SageMaker training and deployment alternatives are
-  included, while ECS is disabled by default.
+  included. Google Cloud deployment is not automatically triggered by GitHub.
 
 ---
 
@@ -234,12 +235,30 @@ The API also accepts a `{"features": [...]}` vector when the canonical six
 feature values are supplied in the order documented by
 [`src/schema.py`](src/schema.py).
 
+### Public demo
+
+The live FastAPI service runs on [Google Cloud Run](https://node-saturation-api-fp6clzw5ga-od.a.run.app).
+Try the interactive API at [`/docs`](https://node-saturation-api-fp6clzw5ga-od.a.run.app/docs)
+or check readiness at [`/ready`](https://node-saturation-api-fp6clzw5ga-od.a.run.app/ready).
+The service scales to zero when idle, so the first request can take longer to start.
+Cloud Run deployment is manual (not part of GitHub Actions); runtime and artifact
+storage can incur charges beyond the free quotas. See [Cloud Run pricing](https://cloud.google.com/run/pricing)
+and [Artifact Registry pricing](https://cloud.google.com/artifact-registry/pricing).
+
+Try the trained model in the [public Hugging Face demo](https://huggingface.co/spaces/TechBsf/cloud-node-saturation-mlops-demo).
+Enter the six telemetry values to get a saturation-risk score. This static demo
+reproduces the fitted `LinearRegression` calculation in the browser and does not
+require an account or a running backend. The model files and full FastAPI source
+remain available in the [Hugging Face model repository](https://huggingface.co/TechBsf/cloud-node-saturation-mlops).
+
 ---
 
 ## Repository Structure
 
 ```text
-.github/workflows/       CI and ECS/CD workflows
+.github/workflows/       CI and gated AWS ECS deployment workflow
+hf_space_static/         Static Hugging Face model demo
+.gcloudignore            Cloud Run source upload exclusions
 src/
   data/                  CSV loading, validation and deterministic splits
   models/                Metrics, model gate, inference and drift monitoring
@@ -338,17 +357,14 @@ The CI workflow:
 7. Builds the Docker image.
 8. Performs an API readiness and prediction smoke test.
 
-The CD workflow is triggered after CI on `main` or manually. It is guarded
+The AWS ECS workflow is triggered after CI on `main` or manually. It is guarded
 by `DEPLOY_ENABLED=true`; credentials use GitHub OIDC with an external
-`DEPLOY_ROLE_ARN`.
+`DEPLOY_ROLE_ARN`. The repository variable is currently `false`, and AWS
+deployment is blocked by the target account's organization SCP.
 
-Required repository variable/secret:
-
-- `DEPLOY_ENABLED=true`
-- `DEPLOY_ROLE_ARN=arn:aws:iam::<account-id>:role/<deploy-role>`
-
-The ECS infrastructure is not created or validated by this repository. The
-workflow expects an existing cluster, service, task family and container name.
+The live Google Cloud Run service was deployed manually with
+`gcloud run deploy --source .`; pushing to GitHub does not redeploy it.
+Cloud Run infrastructure is not created by this repository.
 
 ---
 
